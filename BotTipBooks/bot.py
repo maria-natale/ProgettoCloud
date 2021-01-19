@@ -28,7 +28,9 @@ class MyBot(ActivityHandler):
         self._user_state = user_state
         self._user_state_accessor = self._user_state.create_property("WelcomeUserState")
         self.WELCOME_MESSAGE = "Ciao sono BookTipsBot, sono un bot che ti offre supporto all'acquisto dei libri di cui sei interessato,ecc..."
-        self.PATTERN_MESSAGE ="Prova a dire info per ottenere informazioni aggiuntive"
+        self.PATTERN_MESSAGE ="""Ecco cosa posso fare per te: \n - Posso cercare un libro, prova a chiedermi trova guida galattica per gli autostoppisti \n - Posso confrontare i prezzi, prova a chiedermi confronta prezzi guida galattica per gli autostoppisti \n- Posso autenticarti e farti accedere alla tua wishlist \n- Puoi chiedermi informazioni aggiuntive scrivendo info
+        """
+        
 
     async def on_message_activity(self, turn_context: TurnContext):
         welcome_user_state = await self._user_state_accessor.get(turn_context, WelcomeUserState)
@@ -36,10 +38,7 @@ class MyBot(ActivityHandler):
             welcome_user_state.did_welcome_user = True
 
             await turn_context.send_activity("Se vedi questo messaggio è la prima volta che accedi al bot")
-
             name = turn_context.activity.from_property.name
-            await turn_context.send_activity(f"Ciao {name}")
-        else:
             #Qua va usato luis per capire gli intent
             text = turn_context.activity.text.lower()
             if text in ("info"):
@@ -70,7 +69,7 @@ class MyBot(ActivityHandler):
     ):
         for member_added in members_added:
             if member_added.id != turn_context.activity.recipient.id:
-                await turn_context.send_activity(f"Ciao {member_added.name}." + self.WELCOME_MESSAGE)
+                await turn_context.send_activity(self.WELCOME_MESSAGE)
                 await turn_context.send_activity(self.PATTERN_MESSAGE)
     
     async def on_turn(self,turn_context:TurnContext):
