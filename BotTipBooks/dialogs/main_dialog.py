@@ -15,31 +15,79 @@ from botbuilder.schema import (
     ActionTypes,
 )
 from botbuilder.dialogs.prompts import TextPrompt, PromptOptions, ChoicePrompt
-from botbuilder.core import MessageFactory, TurnContext, CardFactory
+from botbuilder.core import MessageFactory, TurnContext, CardFactory, UserState
 from botbuilder.schema import InputHints, SuggestedActions
 from botbuilder.dialogs.choices import Choice
 from flight_booking_recognizer import FlightBookingRecognizer
 from .findbook_dialog import FindBookDialog
-from book import Book
+from bean import Book, User
+from botbuilder.dialogs.prompts.oauth_prompt_settings import OAuthPromptSettings
+from botbuilder.dialogs.prompts.oauth_prompt import OAuthPrompt
+from .logout_dialog import LogoutDialog
+from botbuilder.dialogs.prompts.confirm_prompt import ConfirmPrompt
 
+class MainDialog(LogoutDialog):
 
-class MainDialog(ComponentDialog):
-
-    def __init__(self, luis_recognizer: FlightBookingRecognizer, findbook: FindBookDialog):
-        super(MainDialog, self).__init__(MainDialog.__name__)
+    def __init__(self, user_state: UserState, connection_name: str,  luis_recognizer: FlightBookingRecognizer, findbook: FindBookDialog):
+        super(MainDialog, self).__init__(MainDialog.__name__, connection_name)
 
         self._luis_recognizer = luis_recognizer
         self.findbook_dialog_id=findbook.id
+        self.user_state=user_state
+
+        self.add_dialog(
+            OAuthPrompt(
+                OAuthPrompt.__name__,
+                OAuthPromptSettings(
+                    connection_name=connection_name,
+                    text="Please Sign In",
+                    title="Sign In",
+                    timeout=300000,
+                ),
+            )
+        )
 
         self.add_dialog(TextPrompt(TextPrompt.__name__))
         self.add_dialog(ChoicePrompt(ChoicePrompt.__name__))
         self.add_dialog(
             WaterfallDialog(
-                "WFDialog", [self.intro_step, self.menu_step, self.options_step, self.loop_step]
+                "WFDialog", 
+                [self.prompt_step,
+                 self.intro_step,
+                 self.menu_step, 
+                 self.options_step, 
+                 self.loop_step]
             )
         )
         self.add_dialog(findbook)
-        self.initial_dialog_id = "WFDialog"
+
+        self.add_dialog(
+            WaterfallDialog(
+                "WFDialogLogin",
+                [
+                    self.prompt_step,
+                    self.login_step
+                ]
+            )
+        )
+
+        self.initial_dialog_id = "WFDialogLogin"
+        
+        
+
+    async def prompt_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        return await step_context.begin_dialog(OAuthPrompt.__name__)
+
+    async def login_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        if step_context.result:
+            await step_context.context.send_activity("Sei loggato")
+            print(self.user_state.get(step_context.context)["User"].idUser)
+            return await step_context.begin_dialog("WFDialog")
+
+        await step_context.context.send_activity("Login was not successful please try again.")
+        return await step_context.end_dialog()
+  
+
 
     async def intro_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         """if not self._luis_recognizer.is_configured:
@@ -128,5 +176,5 @@ class MainDialog(ComponentDialog):
 
 
     async def loop_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        return await step_context.replace_dialog(self.id)
+        return await step_context.replace_dialog("WFDialog")
         

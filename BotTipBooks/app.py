@@ -23,17 +23,19 @@ from botbuilder.schema import Activity
 
 from config import DefaultConfig
 from dialogs import MainDialog, FindBookDialog
-from bots import DialogAndWelcomeBot
 
 from adapter_with_error_handler import AdapterWithErrorHandler
 from flight_booking_recognizer import FlightBookingRecognizer
-
+from pip._internal import req
+from botbuilder.core.bot_framework_adapter import BotFrameworkAdapter
+from bots import DialogBot
 
 CONFIG = DefaultConfig()
 
 # Create adapter.
 # See https://aka.ms/about-bot-adapter to learn more about how bots work.
 SETTINGS = BotFrameworkAdapterSettings(CONFIG.APP_ID, CONFIG.APP_PASSWORD)
+#ADAPTER = BotFrameworkAdapter(SETTINGS)
 
 # Create MemoryStorage, UserState and ConversationState
 MEMORY = MemoryStorage()
@@ -47,8 +49,8 @@ ADAPTER = AdapterWithErrorHandler(SETTINGS, CONVERSATION_STATE)
 # Create dialogs and Bot
 RECOGNIZER = FlightBookingRecognizer(CONFIG)
 FINDBOOK_DIALOG = FindBookDialog()
-DIALOG = MainDialog(RECOGNIZER, FINDBOOK_DIALOG)
-BOT = DialogAndWelcomeBot(CONVERSATION_STATE, USER_STATE, DIALOG)
+DIALOG = MainDialog(USER_STATE, CONFIG.CONNECTION_NAME, RECOGNIZER, FINDBOOK_DIALOG)
+BOT = DialogBot(CONVERSATION_STATE, USER_STATE, DIALOG)
 
 
 # Listen for incoming requests on /api/messages.
@@ -76,3 +78,4 @@ if __name__ == "__main__":
         web.run_app(APP, host="localhost", port=CONFIG.PORT)
     except Exception as error:
         raise error
+    
