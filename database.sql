@@ -3,10 +3,8 @@ create database BotTipBooksDatabase;
 use BotTipBooksDatabase;
 
 create table Utenti(
-	email VARCHAR(45) NOT NULL UNIQUE,
-	password VARCHAR(50) NOT NULL,
-	username VARCHAR(50) NOT NULL,
-	PRIMARY KEY (username));
+	id VARCHAR(50) NOT NULL,
+	PRIMARY KEY (id));
 
 create table Categorie(
 	nomeCategoria varchar(50) not null,

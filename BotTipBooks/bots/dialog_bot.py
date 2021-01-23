@@ -9,6 +9,7 @@ import json
 from typing import List
 from botbuilder.schema import Attachment, ChannelAccount
 from bean import User
+from botbuilder.dialogs.dialog_set import DialogSet
 
 
 class DialogBot(ActivityHandler):
@@ -23,17 +24,10 @@ class DialogBot(ActivityHandler):
         self.conversation_state = conversation_state
         self.user_state = user_state
         self.dialog = dialog
-        self.user_profile_accessor = user_state.create_property("User")
 
     
     async def on_members_added_activity(self, members_added: List[ChannelAccount], turn_context: TurnContext):
-        user_profile = await self.user_profile_accessor.get(
-                turn_context, User
-            )
         for member in members_added:
-            if member.name=="User":
-                print(member.id)
-                user_profile.idUser=member.id
             if member.id != turn_context.activity.recipient.id:
                 #welcome_card = self.create_adaptive_card_attachment()
                 #response = MessageFactory.attachment(welcome_card)

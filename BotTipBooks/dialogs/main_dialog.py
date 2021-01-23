@@ -25,22 +25,26 @@ from botbuilder.dialogs.prompts.oauth_prompt_settings import OAuthPromptSettings
 from botbuilder.dialogs.prompts.oauth_prompt import OAuthPrompt
 from .logout_dialog import LogoutDialog
 from botbuilder.dialogs.prompts.confirm_prompt import ConfirmPrompt
+from botbuilder.dialogs.choices.channel import Channel
+from .registration_dialog import RegistrationDialog
+
+registration_dialog=RegistrationDialog()
+findbook=FindBookDialog()
 
 class MainDialog(LogoutDialog):
-
-    def __init__(self, user_state: UserState, connection_name: str,  luis_recognizer: FlightBookingRecognizer, findbook: FindBookDialog):
+    
+    def __init__(self, connection_name: str,  luis_recognizer: FlightBookingRecognizer):
         super(MainDialog, self).__init__(MainDialog.__name__, connection_name)
-
+        
         self._luis_recognizer = luis_recognizer
         self.findbook_dialog_id=findbook.id
-        self.user_state=user_state
 
         self.add_dialog(
             OAuthPrompt(
                 OAuthPrompt.__name__,
                 OAuthPromptSettings(
                     connection_name=connection_name,
-                    text="Please Sign In",
+                    text="Accedi",
                     title="Sign In",
                     timeout=300000,
                 ),
@@ -60,6 +64,7 @@ class MainDialog(LogoutDialog):
             )
         )
         self.add_dialog(findbook)
+        self.add_dialog(registration_dialog)
 
         self.add_dialog(
             WaterfallDialog(
@@ -80,10 +85,13 @@ class MainDialog(LogoutDialog):
 
     async def login_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         if step_context.result:
+            iduser=step_context.context.activity.from_property.id
+            #controlla se è registrato nel database
+            flag=False
+            if not flag:
+                return await step_context.begin_dialog(registration_dialog.id) #se non è registrato
             await step_context.context.send_activity("Sei loggato")
-            print(self.user_state.get(step_context.context)["User"].idUser)
             return await step_context.begin_dialog("WFDialog")
-
         await step_context.context.send_activity("Login was not successful please try again.")
         return await step_context.end_dialog()
   
@@ -101,7 +109,7 @@ class MainDialog(LogoutDialog):
 
             return await step_context.next(None)"""
 
-        WELCOME_MESSAGE = "Come posso aiutarti?\n\nSe vuoi sapere cosa posso fare per te scrivi \"menu\""
+        WELCOME_MESSAGE = "Come posso aiutarti?\nSe vuoi sapere cosa posso fare per te scrivi \"menu\""
         message_text = (
             str(step_context.options)
             if step_context.options
@@ -128,8 +136,8 @@ class MainDialog(LogoutDialog):
                 ),
                 CardAction(
                     type=ActionTypes.im_back,
-                    title ="Registrazione",
-                    value="registrazione"
+                    title ="Visualizza wishlist",
+                    value="wishlist"
                 ),
                 CardAction(
                     type=ActionTypes.im_back,
@@ -171,8 +179,6 @@ class MainDialog(LogoutDialog):
             return await step_context.next([])
         if (option=="cerca"):
             return await step_context.begin_dialog(self.findbook_dialog_id, Book())
-        #if (option=="registrazione"):
-         #   return await step_context.begin_dialog()
 
 
     async def loop_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
