@@ -1,0 +1,81 @@
+{
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "type": "AdaptiveCard",
+    "version": "1.0",
+  
+    "body": [
+      {
+        "type": "TextBlock",
+        "text": "Scegli una categoria *(isMultiSelect:false, style:compact)*"
+      },
+      
+      {
+        "type": "Input.ChoiceSet",
+        "id": "Scelte",
+        "isMultiSelect": true,
+        "style": "compact",
+        "choices": [
+          {
+              "title":"Biografie",
+              "value":"biografie"
+          },
+          {
+            "title": "Diritto e economia",
+            "value": "dem"
+          },
+          {
+            "title": "Salute e benessere",
+            "value": "seb"
+          },
+          {
+            "title": "Fantascienza e fantasy",
+            "value": "fantasy"
+          },
+          {
+            "title": "Fumetti",
+            "value": "fumetti"
+          },
+          {
+            "title": "Gialli e thriller",
+            "value": "gialli"
+          },
+          {
+            "title": "Humor",
+            "value": "humor"
+          },
+          {
+            "title": "Informatica",
+            "value": "inf"
+          },
+          {
+            "title": "Libri per bambini",
+            "value": "kids"
+          },
+          {
+            "title": "Libri scolastici",
+            "value": "scuola"
+          },
+          {
+            "title": "Narrativa",
+            "value": "narrativa"
+          },
+          {
+            "title": "Romantici",
+            "value": "romantici"
+          },
+          {
+            "title": "Scienze",
+            "value": "scienza"
+          }
+          
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "type": "Action.Submit",
+        "title": "OK"
+      }
+    ]
+  }
+  
