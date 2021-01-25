@@ -27,6 +27,7 @@ from .logout_dialog import LogoutDialog
 from botbuilder.dialogs.prompts.confirm_prompt import ConfirmPrompt
 from botbuilder.dialogs.choices.channel import Channel
 from .registration_dialog import RegistrationDialog
+from databaseManager import DatabaseManager
 
 registration_dialog=RegistrationDialog()
 findbook=FindBookDialog()
@@ -86,9 +87,9 @@ class MainDialog(LogoutDialog):
     async def login_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         if step_context.result:
             iduser=step_context.context.activity.from_property.id
+            print("sono nel login")
             #controlla se è registrato nel database
-            flag=False
-            if not flag:
+            if not DatabaseManager.user_is_registered(iduser):
                 return await step_context.begin_dialog(registration_dialog.id) #se non è registrato
             await step_context.context.send_activity("Sei loggato")
             return await step_context.begin_dialog("WFDialog")
@@ -183,4 +184,6 @@ class MainDialog(LogoutDialog):
 
     async def loop_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         return await step_context.replace_dialog("WFDialog")
+
+
         

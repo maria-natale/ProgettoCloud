@@ -3,7 +3,7 @@ create database BotTipBooksDatabase;
 use BotTipBooksDatabase;
 
 create table Utenti(
-	id VARCHAR(50) NOT NULL,
+	id varchar (50) not null,
 	PRIMARY KEY (id));
 
 create table Categorie(
@@ -19,7 +19,7 @@ create table UtentiCategorie(
 		references Categorie (nomeCategoria)
 		on update cascade on delete cascade,
 	foreign key (utente)
-		references Utenti(username)
+		references Utenti(id)
 		on update cascade on delete cascade
 );
 
@@ -27,25 +27,25 @@ create table Libri(
 	titolo VARCHAR(50) NOT NULL,
     autore VARCHAR (50) not null,
     categoria varchar (50),
+    genere varchar(50),
+    prezzo float,
+    sito varchar(50),
     FOREIGN KEY (categoria)
         REFERENCES Categorie (nomeCategoria)
         ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (titolo, autore)
 );
 
+
 create table Wishlist(
 	utente varchar (50) not null,
     titoloLibro varchar(50) not null,
     autoreLibro varchar(50) not null,
-    prezzo float,
     primary key(utente, titoloLibro, autoreLibro),
     FOREIGN KEY (utente)
-        REFERENCES Utenti (username)
+        REFERENCES Utenti (id)
         ON UPDATE CASCADE ON DELETE CASCADE,
-	FOREIGN KEY (titoloLibro)
-        REFERENCES Libri (titolo)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-	FOREIGN KEY (autoreLibro)
-        REFERENCES Libri (autore)
-        ON UPDATE CASCADE ON DELETE CASCADE
+	FOREIGN KEY (titoloLibro, autoreLibro)
+        REFERENCES Libri (titolo, autore)
+        on update cascade on delete cascade
 );
