@@ -1,9 +1,10 @@
 from botbuilder.dialogs import ComponentDialog, DialogContext, DialogTurnResult, DialogTurnStatus, PromptOptions, TextPrompt, WaterfallDialog, WaterfallStepContext
 from botbuilder.schema import ActivityTypes, InputHints
 from botbuilder.core import CardFactory, MessageFactory
-from .cancel_and_help_dialog import CancelAndHelpDialog
+#from .cancel_and_help_dialog import CancelAndHelpDialog
 from botbuilder.schema._models_py3 import CardAction, HeroCard
 from botbuilder.schema._connector_client_enums import ActionTypes
+from .cards.cardreg import CARD_REGISTRATION
 
 import pyodbc
 server = 'servercc.database.windows.net'
@@ -22,11 +23,11 @@ class RegistrationDialog(CancelAndHelpDialog):
         super(RegistrationDialog, self).__init__(dialog_id or RegistrationDialog.__name__)
 
         #cercare le categorie dal database
-        search_categories()
+        #search_categories()
 
         self.add_dialog(
             WaterfallDialog(
-                "WFDialog", [self.add_categories]
+                "WFDialog", [self.search_categories,self.add_categories]
             )
         )
 
@@ -39,11 +40,20 @@ class RegistrationDialog(CancelAndHelpDialog):
 
 
 
-def search_categories():
-    with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT ALL nomeCategoria FROM Categorie")
-            row = cursor.fetchone()
-            while row:
-                CATEGORIES.append(str(row[0]))
-                row = cursor.fetchone()   
+    async def search_categories(self,step_context: WaterfallStepContext) -> DialogTurnResult:
+        """with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
+             with conn.cursor() as cursor:
+                cursor.execute("SELECT ALL nomeCategoria FROM Categorie")
+                row = cursor.fetchone()
+                while row:
+                    CATEGORIES.append(str(row[0]))
+                    row = cursor.fetchone()"""
+        return await step_context.prompt(
+            "promptname",
+            PromptOptions(
+                prompt = MessageFactory.attachment(self.create_adaptive_card())
+            )
+        )
+    
+    def create_adaptive_card(self) -> Attachment:
+        return CardFactory.adaptive_card(CARD_REGISTRATION)
