@@ -21,7 +21,6 @@ CARD_PROMPT = "cardPrompt"
 class RegistrationDialog(ComponentDialog):
     def __init__(self, dialog_id: str = None):
         super(RegistrationDialog, self).__init__(dialog_id or RegistrationDialog.__name__)
-
         self.add_dialog(TextPrompt(TextPrompt.__name__))
         self.add_dialog(ChoicePrompt(CARD_PROMPT))
         self.add_dialog(
@@ -47,41 +46,13 @@ class RegistrationDialog(ComponentDialog):
                 prompt = MessageFactory.attachment(CardFactory.adaptive_card(card))
             )
         )        
-        """return await step_context.prompt(
-            CARD_PROMPT,
-            PromptOptions(
-                prompt=MessageFactory.text(
-                    ""
-                ),
-                retry_prompt=MessageFactory.text(
-                    "That was not a valid choice, please select a card or number from 1 "
-                    "to 9."
-                ),
-                choices=self.get_choices(),
-                style= ListStyle.auto
-            ),
-        )"""
+        
 
 
     async def validate(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         message=step_context.result
         print(message)
 
-    def get_choices(self):
-        card_options = [
-            Choice(value="Adaptive Card", synonyms=["adaptive"]),
-            Choice(value="Animation Card", synonyms=["animation"]),
-            Choice(value="Audio Card", synonyms=["audio"]),
-            Choice(value="Hero Card", synonyms=["hero"]),
-            Choice(value="OAuth Card", synonyms=["oauth"]),
-            Choice(value="Receipt Card", synonyms=["receipt"]),
-            Choice(value="Signin Card", synonyms=["signin"]),
-            Choice(value="Thumbnail Card", synonyms=["thumbnail", "thumb"]),
-            Choice(value="Video Card", synonyms=["video"]),
-            Choice(value="All Cards", synonyms=["all"]),
-        ]
-
-        return card_options
         
 
        

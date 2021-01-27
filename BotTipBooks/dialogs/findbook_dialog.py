@@ -7,6 +7,18 @@ from botbuilder.dialogs.prompts.prompt_options import PromptOptions
 from botbuilder.dialogs.prompts import ConfirmPrompt
 import requests
 from bean import BookInfo
+from databaseManager import DatabaseManager
+
+from botbuilder.core.card_factory import CardFactory
+from pyadaptivecards.card import AdaptiveCard
+from pyadaptivecards.components import TextBlock, Column
+from pyadaptivecards.container import ColumnSet
+from pyadaptivecards.options import Colors, HorizontalAlignment, Spacing, FontWeight
+import json
+import os
+from pyadaptivecards.options import FontSize
+from typing import List
+import time
 
 
 class FindBookDialog(CancelAndHelpDialog):
@@ -38,11 +50,11 @@ class FindBookDialog(CancelAndHelpDialog):
             book_name=step_context.result
             validate_result = self._validate_title(book_name)
             if validate_result:
-                card=self.find_book(book_name)
+                card= await self.find_book(book_name)
                 #visualizza risultati
-                message_text = ("trovati")
-                message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
-                await step_context.context.send_activity(message)
+                #message_text = ("trovati")
+                #message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+                await step_context.context.send_activity(MessageFactory.attachment(card))
 
                 message_text = "Desideri aggiungere un libro alla tua wishlist?"
                 prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
@@ -70,25 +82,78 @@ class FindBookDialog(CancelAndHelpDialog):
     
     async def add_to_wishlist(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         result=step_context.result
-        
+        iduser=step_context.context.activity.from_property.id
+        book_to_add=BookInfo()
+        for book in self.books:
+            if book.site.lower()==result.lower():
+                book_to_add=book
+                break
+        if book_to_add.name==None: #se il nome del libro del sito cercato non è stato preso
+            for book in self.books:
+                if book.name!=None:
+                    book_to_add.name=book.name
+                    break
+        if book_to_add.author==None: #se il nome dell'autore del sito cercato non è stato preso
+            for book in self.books:
+                if book.author!=None:
+                    book_to_add.author=book.author
+                    break
+        if book_to_add.site!=None:
+            if DatabaseManager.add_book_wishlist(id, book_to_add):
+                message_text = ("Il libro {} è stato aggiunto alla tua wishlist".format(book_to_add.name))
+                message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+                await step_context.context.send_activity(message)
+                return await step_context.end_dialog
+        message_text = ("Si è verificato un errore durante l'aggiunta del libro {} alla tua wishlist".format(book_to_add.name))
+        message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+        await step_context.context.send_activity(message)
         return await step_context.end_dialog()
     
 
-    def find_book(self, title: str):
-        r=requests.get("https://find-book-function.azurewebsites.net/api/FindBooksScraper?name={}&who=all".format(title))
+    def create_result_card(self):
+        for book in self.books:
+                if book.name!=None:
+                    title=book.name
+                    break
+        for book in self.books:
+                if book.author!=None:
+                    author=book.author
+                    break
+        
+        firstcolumnSet = ColumnSet([Column([TextBlock("Risultati", color=Colors(7), horizontalAlignment=HorizontalAlignment(2), wrap=True)])])
+        items=[]
+        items.append(TextBlock("{} di {} ".format(title, author), weight=FontWeight(3), wrap=True, isSubtle=True))
+        columns=[]
+        for book in self.books:
+            items.append(TextBlock("Nome del sito: {} ".format(book.site), spacing=Spacing(3), wrap=True))
+            items.append(TextBlock("Prezzo: {} ".format(book.price), spacing=Spacing(3), wrap=True))
+            items.append(TextBlock("Disponibilità: {} ".format(book.availability), spacing=Spacing(3), wrap=True))
+            items.append(TextBlock("Link per l'acquisto: {} ".format(book.link), spacing=Spacing(3), wrap=True, color=Colors(5)))
+            columns.append(Column(items))
+            items=[]
+        columnSet= ColumnSet(columns, separator=True, spacing=Spacing(4))
+        card = AdaptiveCard(body=[firstcolumnSet, columnSet])
+
+        return CardFactory.adaptive_card(card.to_dict())
+
+
+    async def find_book(self, title: str):
+        r= requests.get("https://find-book-function.azurewebsites.net/api/FindBooksScraper?name={}&who=all".format(title))
+        time.sleep(25)
         string_result=r.text.split("\n")
         book=BookInfo()
+        print(string_result)
         for i, s in enumerate(string_result):
-            if i%6==0:
+            if i%7==0:
                 book=BookInfo()
                 book.site=s
-            elif i%6==1:
+            elif i%7==1:
                 book.name=s
-            elif i%6==2:
+            elif i%7==2:
                 book.author=s
-            elif i%6==3:
+            elif i%7==3:
                 book.availability=s
-            elif i%6==4:
+            elif i%7==4:
                 if s!=None:
                     s=s.replace(",", ".")
                 try:
@@ -96,12 +161,14 @@ class FindBookDialog(CancelAndHelpDialog):
                 except ValueError:
                     book.price=None
                 book.price=None
-            elif i%6==5:
+            elif i%7==5:
                 book.genre=s
+            elif i%7==6:
+                book.link=s
                 self.books.append(book)
         for book in self.books:
             print(book.name)
-        return create_result_card()
+        return self.create_result_card()
         
 
     def _validate_title(self, user_input: str) -> bool:
@@ -110,5 +177,4 @@ class FindBookDialog(CancelAndHelpDialog):
         return True
     
 
-    def create_result_card(self):
-        pass
+    
