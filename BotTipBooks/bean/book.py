@@ -1,8 +1,13 @@
 class Book:
-    def __init__(self, name=None, author=None, price=None, availability=None, genre=None, site=None):
+    def __init__(self, name=None, author=None, genre=None):
         self.name=name
         self.author=author
+        self.genre=genre
+
+
+class BookInfo(Book):
+    def __init__(self, name=None, author=None, price=None, genre=None, site=None, availability=None):
+        super().__init__(name=name, author=author, genre=genre)
+        self.site=site
         self.price=price
         self.availability=availability
-        self.genre=genre
-        self.site=site

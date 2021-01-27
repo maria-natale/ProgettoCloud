@@ -28,14 +28,17 @@ from botbuilder.dialogs.prompts.confirm_prompt import ConfirmPrompt
 from botbuilder.dialogs.choices.channel import Channel
 from .registration_dialog import RegistrationDialog
 from databaseManager import DatabaseManager
+from botbuilder.schema._connector_client_enums import ActivityTypes
+from botbuilder.dialogs.dialog import Dialog
 
 registration_dialog=RegistrationDialog()
 findbook=FindBookDialog()
 
-class MainDialog(LogoutDialog):
+class MainDialog(ComponentDialog):
     
     def __init__(self, connection_name: str,  luis_recognizer: FlightBookingRecognizer):
-        super(MainDialog, self).__init__(MainDialog.__name__, connection_name)
+        super(MainDialog, self).__init__(MainDialog.__name__)
+        self.connection_name=connection_name
         
         self._luis_recognizer = luis_recognizer
         self.findbook_dialog_id=findbook.id
@@ -53,14 +56,14 @@ class MainDialog(LogoutDialog):
         )
 
         self.add_dialog(TextPrompt(TextPrompt.__name__))
-        self.add_dialog(ChoicePrompt(ChoicePrompt.__name__))
+        self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__))
         self.add_dialog(
             WaterfallDialog(
                 "WFDialog", 
-                [self.prompt_step,
-                 self.intro_step,
+                [
                  self.menu_step, 
-                 self.options_step, 
+                 self.options_step,
+                 self.final_step, 
                  self.loop_step]
             )
         )
@@ -89,16 +92,16 @@ class MainDialog(LogoutDialog):
             iduser=step_context.context.activity.from_property.id
             print("sono nel login")
             #controlla se è registrato nel database
-            if not DatabaseManager.user_is_registered(iduser):
+            if DatabaseManager.user_is_registered(iduser):
                 return await step_context.begin_dialog(registration_dialog.id) #se non è registrato
             await step_context.context.send_activity("Sei loggato")
             return await step_context.begin_dialog("WFDialog")
         await step_context.context.send_activity("Login was not successful please try again.")
         return await step_context.end_dialog()
   
+        
 
-
-    async def intro_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+    async def menu_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         """if not self._luis_recognizer.is_configured:
             await step_context.context.send_activity(
                 MessageFactory.text(
@@ -110,58 +113,38 @@ class MainDialog(LogoutDialog):
 
             return await step_context.next(None)"""
 
-        WELCOME_MESSAGE = "Come posso aiutarti?\nSe vuoi sapere cosa posso fare per te scrivi \"menu\""
-        message_text = (
-            str(step_context.options)
-            if step_context.options
-            else WELCOME_MESSAGE
-        )
-        prompt_message = MessageFactory.text(
-            message_text, message_text, InputHints.expecting_input
+        card = HeroCard(
+        text ="Ciao, come posso aiutarti? ",
+        buttons = [
+            CardAction(
+                type=ActionTypes.im_back,
+                title ="Info",
+                value="info"
+            ),
+            CardAction(
+                type=ActionTypes.im_back,
+                title ="Visualizza wishlist",
+                value="wishlist"
+            ),
+            CardAction(
+                type=ActionTypes.im_back,
+                title ="Cerca libro",
+                value="cerca"
+            ),
+            CardAction(
+                type=ActionTypes.im_back,
+                title ="Logout",
+                value="logout"
+            )
+        ],   
         )
         return await step_context.prompt(
-            TextPrompt.__name__, PromptOptions(prompt=prompt_message)
-        )
-        
-
-    async def menu_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        message=step_context.result
-        if message=='menu':
-            card = HeroCard(
-            text ="Seleziona un'opzione: ",
-            buttons = [
-                CardAction(
-                    type=ActionTypes.im_back,
-                    title ="Info",
-                    value="info"
-                ),
-                CardAction(
-                    type=ActionTypes.im_back,
-                    title ="Visualizza wishlist",
-                    value="wishlist"
-                ),
-                CardAction(
-                    type=ActionTypes.im_back,
-                    title ="Cerca libro",
-                    value="cerca"
-                ),
-            ],   
-        )
-            return await step_context.prompt(
             TextPrompt.__name__,
             PromptOptions(
                 MessageFactory.attachment(CardFactory.hero_card(card))
             ),
         )
-        else:
-            message_text= (
-            str(step_context.options)
-            if step_context.options
-            else "Input non valido")
-            prompt_message = MessageFactory.text(
-                message_text)
-            await step_context.context.send_activity(prompt_message)
-            return await step_context.replace_dialog(self.id)
+        
 
 
     async def options_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
@@ -180,10 +163,25 @@ class MainDialog(LogoutDialog):
             return await step_context.next([])
         if (option=="cerca"):
             return await step_context.begin_dialog(self.findbook_dialog_id, Book())
+        if (option=="logout"): #vedi logoutdialog
+            return await step_context.cancel_all_dialogs()
+
+    
+    async def final_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        message_text = "Posso fare qualcos'altro per te?"
+        prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
+        return await step_context.prompt(
+                ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message)
+                )
 
 
     async def loop_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        return await step_context.replace_dialog("WFDialog")
+        result=step_context.result
+        if result:
+            return await step_context.replace_dialog("WFDialog")
+        return await step_context.cancel_all_dialogs()
+
+
 
 
         

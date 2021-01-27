@@ -27,9 +27,6 @@ create table Libri(
 	titolo VARCHAR(50) NOT NULL,
     autore VARCHAR (50) not null,
     categoria varchar (50),
-    genere varchar(50),
-    prezzo float,
-    sito varchar(50),
     FOREIGN KEY (categoria)
         REFERENCES Categorie (nomeCategoria)
         ON UPDATE CASCADE ON DELETE CASCADE,

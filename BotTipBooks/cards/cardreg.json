@@ -1,4 +1,4 @@
-CARD_REGISTRATION ={
+{
     "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
     "type": "AdaptiveCard",
     "version": "1.0",
@@ -6,7 +6,7 @@ CARD_REGISTRATION ={
     "body": [
       {
         "type": "TextBlock",
-        "text": "Scegli una categoria *(isMultiSelect:false, style:compact)*"
+        "text": "Scegli 3 categorie"
       },
       
       {
@@ -17,55 +17,68 @@ CARD_REGISTRATION ={
         "choices": [
           {
               "title":"Biografie",
-              "value":"biografie"
+              "value":"Biografie",
+              "type": "Input.Choice"
           },
           {
             "title": "Diritto e economia",
-            "value": "dem"
+            "value": "Diritto e economia",
+            "type": "Input.Choice"
           },
           {
             "title": "Salute e benessere",
-            "value": "seb"
+            "value": "Salute e benessere",
+            "type": "Input.Choice"
           },
           {
             "title": "Fantascienza e fantasy",
-            "value": "fantasy"
+            "value": "Fantascienza e fantasy",
+            "type": "Input.Choice"
           },
           {
             "title": "Fumetti",
-            "value": "fumetti"
+            "value": "Fumetti",
+            "type": "Input.Choice"
           },
           {
             "title": "Gialli e thriller",
-            "value": "gialli"
+            "value": "Gialli e thriller",
+            "type": "Input.Choice"
           },
           {
             "title": "Humor",
-            "value": "humor"
+            "value": "Humor",
+            "type": "Input.Choice"
           },
           {
             "title": "Informatica",
-            "value": "inf"
+            "value": "Informatica",
+            "type": "Input.Choice"
           },
           {
             "title": "Libri per bambini",
-            "value": "kids"
+            "value": "Libri per bambini",
+            "type": "Input.Choice"
           },
           {
             "title": "Libri scolastici",
-            "value": "scuola"
+            "value": "Libri scolastici",
+            "type": "Input.Choice"
           },
           {
             "title": "Narrativa",
-            "value": "narrativa"
+            "value": "Narrativa",
+            "type": "Input.Choice"
           },
           {
             "title": "Romantici",
-            "value": "romantici"
+            "value": "Romantici",
+            "type": "Input.Choice"
           },
           {
             "title": "Scienze",
-            "value": "scienza"
+            "value": "Scienze",
+            "type": "Input.Choice"
           }
           
         ]
