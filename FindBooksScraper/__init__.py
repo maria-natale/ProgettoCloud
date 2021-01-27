@@ -36,7 +36,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
        logging.info(list_of_results)
        if len(list_of_results)<=5:
            return func.HttpResponse(f"""{list_of_results[0]} \n {list_of_results[1]} \n
-            {list_of_results[2]} \n {list_of_results[3]} \n {list_of_results[4]}\n""")
+            {list_of_results[2]} \n {list_of_results[3]} \n {list_of_results[4]}\n {list_of_result[5]}\n""")
        else:
            all_of_res =''
            for elem in list_of_results:
@@ -104,6 +104,7 @@ def scrape_hoepli (url):   # in ordine restituisce titolo,autore,disponibilità 
         else:
             genere = 'Non disponibile'
     list_of_result.append(genere)
+    list_of_result.append(url)
     
     return list_of_result
 
@@ -153,6 +154,7 @@ def scrape_ibs(url):  #manca genere
         price ='Prezzo non disponibile'
         ibs_result.append(price)
     ibs_result.append('Genere non rilevato')
+    ibs_result.append(url)
     return ibs_result
 
 def scrape_amazon(url): #completo
@@ -189,6 +191,7 @@ def scrape_amazon(url): #completo
     for i in range(len(categorie)):
         if i == len(categorie) - 1:
             scrape_am_result.append(categorie[i]['name'])
+    scrape_am_result.append(url)
     return scrape_am_result
 
 def scrape_mondadori(url): #completo
@@ -238,6 +241,7 @@ def scrape_mondadori(url): #completo
     if genre is not None:
         genre = genre.text
     res_scrape.append(genre)
+    res_scrape.append(url)
     return res_scrape
 
 def scrape_not_available_feltrinelli(url): #in caso il libro non sia disponibile
@@ -259,6 +263,7 @@ def scrape_not_available_feltrinelli(url): #in caso il libro non sia disponibile
     moreInfo = soup.findAll('div',attrs={"class":"block-content separate-block"})
     for info in moreInfo:
         result_.append(info.find('a').text)
+    result_.append(url)
     return result_
 
 
@@ -294,6 +299,7 @@ def scrape_feltrinelli(url):
     
     if len(result_felt)<5:
         result_felt = scrape_not_available_feltrinelli(url)
+    result_felt.append(url)
     return result_felt
 
 
