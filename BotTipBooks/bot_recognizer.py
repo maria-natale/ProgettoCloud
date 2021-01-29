@@ -7,7 +7,7 @@ from botbuilder.core import Recognizer, RecognizerResult, TurnContext
 from config import DefaultConfig
 
 
-class FlightBookingRecognizer(Recognizer):
+class BotRecognizer(Recognizer):
     def __init__(self, configuration: DefaultConfig):
         self._recognizer = None
 

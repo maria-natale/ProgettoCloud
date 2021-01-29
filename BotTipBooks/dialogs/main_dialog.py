@@ -18,7 +18,7 @@ from botbuilder.dialogs.prompts import TextPrompt, PromptOptions, ChoicePrompt
 from botbuilder.core import MessageFactory, TurnContext, CardFactory, UserState
 from botbuilder.schema import InputHints, SuggestedActions
 from botbuilder.dialogs.choices import Choice
-from flight_booking_recognizer import FlightBookingRecognizer
+from bot_recognizer import BotRecognizer
 from .findbook_dialog import FindBookDialog
 from bean import Book, User
 from botbuilder.dialogs.prompts.oauth_prompt_settings import OAuthPromptSettings
@@ -36,7 +36,7 @@ findbook=FindBookDialog()
 
 class MainDialog(ComponentDialog):
     
-    def __init__(self, connection_name: str,  luis_recognizer: FlightBookingRecognizer):
+    def __init__(self, connection_name: str,  luis_recognizer: BotRecognizer):
         super(MainDialog, self).__init__(MainDialog.__name__)
         self.connection_name=connection_name
         
@@ -92,6 +92,7 @@ class MainDialog(ComponentDialog):
     async def login_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         if step_context.result:
             iduser=step_context.context.activity.from_property.id
+            print(iduser)
             print("sono nel login")
             #controlla se è registrato nel database
             if not DatabaseManager.user_is_registered(iduser):
@@ -109,7 +110,7 @@ class MainDialog(ComponentDialog):
         
 
     async def menu_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        """if not self._luis_recognizer.is_configured:
+        if not self._luis_recognizer.is_configured:
             await step_context.context.send_activity(
                 MessageFactory.text(
                     "NOTE: LUIS is not configured. To enable all capabilities, add 'LuisAppId', 'LuisAPIKey' and "
@@ -118,7 +119,7 @@ class MainDialog(ComponentDialog):
                 )
             )
 
-            return await step_context.next(None)"""
+            return await step_context.next(None)
 
         card = HeroCard(
         text ="Ciao, come posso aiutarti? ",

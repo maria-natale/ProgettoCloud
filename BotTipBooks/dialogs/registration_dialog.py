@@ -28,6 +28,7 @@ class RegistrationDialog(CancelAndHelpDialog):
         super(RegistrationDialog, self).__init__(dialog_id or RegistrationDialog.__name__)
 
         self.CATEGORIES=DatabaseManager.find_categories()
+        self.CATEGORIES=self.CATEGORIES[:len(self.CATEGORIES)-1]
         self.selected=[]
         self.add_dialog(TextPrompt(TextPrompt.__name__))
         self.add_dialog(
@@ -84,6 +85,11 @@ class RegistrationDialog(CancelAndHelpDialog):
         else:
             iduser=step_context.context.activity.from_property.id
             DatabaseManager.add_user(iduser, self.selected)
+            self.CATEGORIES=DatabaseManager.find_categories()
+            self.CATEGORIES=self.CATEGORIES[:len(self.CATEGORIES)-1]
+            message_text = ("Sei registrato.")
+            message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+            await step_context.context.send_activity(message)
             return await step_context.end_dialog()
     
 

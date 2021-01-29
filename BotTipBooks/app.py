@@ -25,7 +25,7 @@ from config import DefaultConfig
 from dialogs import MainDialog, FindBookDialog
 
 from adapter_with_error_handler import AdapterWithErrorHandler
-from flight_booking_recognizer import FlightBookingRecognizer
+from bot_recognizer import BotRecognizer
 from pip._internal import req
 from botbuilder.core.bot_framework_adapter import BotFrameworkAdapter
 from bots import DialogBot
@@ -47,7 +47,7 @@ CONVERSATION_STATE = ConversationState(MEMORY)
 ADAPTER = AdapterWithErrorHandler(SETTINGS, CONVERSATION_STATE)
 
 # Create dialogs and Bot
-RECOGNIZER = FlightBookingRecognizer(CONFIG)
+RECOGNIZER = BotRecognizer(CONFIG)
 FINDBOOK_DIALOG = FindBookDialog()
 DIALOG = MainDialog(CONFIG.CONNECTION_NAME, RECOGNIZER)
 BOT = DialogBot(CONVERSATION_STATE, USER_STATE, DIALOG)

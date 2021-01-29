@@ -13,7 +13,7 @@ driver= '{ODBC Driver 17 for SQL Server}'
 
 class DatabaseManager:
     @staticmethod
-    def user_is_registered(id: str):
+    def user_is_registered(iduser: str):
         register=False
         with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
             with conn.cursor() as cursor:
@@ -26,43 +26,52 @@ class DatabaseManager:
     
 
     @staticmethod
-    def add_book_wishlist(id: str, book: BookInfo):
+    def add_book_wishlist(iduser: str, book: BookInfo, genres: List):
         with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
             with conn.cursor() as cursor:
-                DatabaseManager.add_book(Book(book.name, book.author, book.genre))
-                cursor.execute("INSERT INTO wishlist (utente, titoloLibro, autoreLibro, prezzo, sito, diponibilita, link) values (?,?,?,?,?,?,?)", id, book.name, book.author, book.price, book.site, book.availability, book.link)
+                book=DatabaseManager.add_book(book, genres)
+                if book!=None and book.price!=None:
+                    try:
+                        cursor.execute("INSERT INTO wishlist (utente, titoloLibro, autoreLibro, prezzo, sito, disponibilita, link) values (?,?,?,?,?,?,?)", iduser, book.name, book.author, book.price, book.site, book.availability, book.link)
+                    except pyodbc.IntegrityError:
+                        return False
+                elif book!=None:
+                    try:
+                        cursor.execute("INSERT INTO wishlist (utente, titoloLibro, autoreLibro, sito, disponibilita, link) values (?,?,?,?,?,?)", iduser, book.name, book.author, book.site, book.availability, book.link)
+                    except pyodbc.IntegrityError:
+                        return False
                 conn.commit()
                 return True
         return False
 
 
     @staticmethod
-    def add_user(id:str, categories: List):
+    def add_user(iduser:str, categories: List):
         with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
             with conn.cursor() as cursor:
-                cursor.execute("INSERT INTO Utenti (id) values (?)", id)
+                cursor.execute("INSERT INTO Utenti (id) values (?)", iduser)
                 conn.commit()
                 for c in categories:
-                    cursor.execute("INSERT INTO UtentiCategorie (utente, categoria) values (?,?)", id, c.name)
+                    cursor.execute("INSERT INTO UtentiCategorie (utente, categoria) values (?,?)", iduser, c.name)
                 conn.commit()
                 return True
         return False
 
     
     @staticmethod 
-    def find_user_info(id: str):
+    def find_user_info(iduser: str):
         if DatabaseManager.user_is_registered(id):
             user=User(id)
             with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
                 with conn.cursor() as cursor:
-                    cursor.execute("SELECT ALL categoria FROM UtentiCategorie WHERE utente=?",id)
+                    cursor.execute("SELECT ALL categoria FROM UtentiCategorie WHERE utente=?",iduser)
                     row = cursor.fetchone()
                     while row:
                         user.add_category(str(row[0]))
                         row = cursor.fetchone() 
             with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
                 with conn.cursor() as cursor:
-                    cursor.execute("SELECT ALL titolo, autore, categoria, prezzo, sito, disponibilita, link FROM Libri, Wishlist WHERE utente=?",id)
+                    cursor.execute("SELECT ALL titolo, autore, categoria, prezzo, sito, disponibilita, link FROM Libri, Wishlist WHERE utente=?",iduser)
                     row = cursor.fetchone()
                     while row:
                         bookinfo=BookInfo()
@@ -94,25 +103,31 @@ class DatabaseManager:
 
     
     @staticmethod
-    def add_book(book:Book):
+    def add_book(book:BookInfo, genres: List):
         categories=DatabaseManager.find_categories()
-        genre=book.genre.split(",")
+        book.genre=None
         for c in categories:
             for s in c.synonyms:
-                for x in genre:
-                    if x.lower()==s.lower():
+                for x in genres:
+                    if c.name=="Storia":
+                        if x.lower()==s.lower():
+                            book.genre=c.name
+                            break
+                    if x.lower() in s.lower() or s.lower() in x.lower():
                         book.genre=c.name
                         break
-        book.genre="Categoria sconosciuta"
+        if book.genre==None:
+            book.genre="Genere sconosciuto"
+        print(book.genre)
         with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
             with conn.cursor() as cursor:
                 try:
                     cursor.execute("INSERT INTO Libri (titolo, autore, categoria) values (?, ?, ?)", book.name, book.author, book.genre)
                     conn.commit()
                 except pyodbc.IntegrityError:
-                    return False
-            return True
-        return False
+                    return book
+            return book
+        return None
             
             
 
