@@ -1,6 +1,8 @@
 import pyodbc
 from bean import User
 from bean import BookInfo
+from bean import Book, Category
+from typing import List
 
 server = 'servercc.database.windows.net'
 database = 'BotTipBooksDatabase'
@@ -27,7 +29,21 @@ class DatabaseManager:
     def add_book_wishlist(id: str, book: BookInfo):
         with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
             with conn.cursor() as cursor:
+                DatabaseManager.add_book(Book(book.name, book.author, book.genre))
                 cursor.execute("INSERT INTO wishlist (utente, titoloLibro, autoreLibro, prezzo, sito, diponibilita, link) values (?,?,?,?,?,?,?)", id, book.name, book.author, book.price, book.site, book.availability, book.link)
+                conn.commit()
+                return True
+        return False
+
+
+    @staticmethod
+    def add_user(id:str, categories: List):
+        with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("INSERT INTO Utenti (id) values (?)", id)
+                conn.commit()
+                for c in categories:
+                    cursor.execute("INSERT INTO UtentiCategorie (utente, categoria) values (?,?)", id, c.name)
                 conn.commit()
                 return True
         return False
@@ -61,6 +77,43 @@ class DatabaseManager:
                         row = cursor.fetchone()
             return user
         return None
+
+
+    @staticmethod
+    def find_categories():
+        categories=[]
+        with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT ALL nomeCategoria, sinonimi FROM Categorie")
+                row = cursor.fetchone()
+                while row:
+                    synonyms=str(row[1]).split(";")
+                    categories.append(Category(str(row[0]),synonyms))
+                    row = cursor.fetchone() 
+        return categories 
+
+    
+    @staticmethod
+    def add_book(book:Book):
+        categories=DatabaseManager.find_categories()
+        genre=book.genre.split(",")
+        for c in categories:
+            for s in c.synonyms:
+                for x in genre:
+                    if x.lower()==s.lower():
+                        book.genre=c.name
+                        break
+        book.genre="Categoria sconosciuta"
+        with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
+            with conn.cursor() as cursor:
+                try:
+                    cursor.execute("INSERT INTO Libri (titolo, autore, categoria) values (?, ?, ?)", book.name, book.author, book.genre)
+                    conn.commit()
+                except pyodbc.IntegrityError:
+                    return False
+            return True
+        return False
+            
             
 
     

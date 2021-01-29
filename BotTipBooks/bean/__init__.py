@@ -3,4 +3,4 @@ from .user import User
 from .category import Category
 
 
-__all__ = ["Book", "User", "Category", "BookInfo"]
+__all__ = ["Book", "User", "BookInfo"]

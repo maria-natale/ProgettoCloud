@@ -8,13 +8,11 @@ from botbuilder.dialogs.prompts import ConfirmPrompt
 import requests
 from bean import BookInfo
 from databaseManager import DatabaseManager
-
 from botbuilder.core.card_factory import CardFactory
 from pyadaptivecards.card import AdaptiveCard
 from pyadaptivecards.components import TextBlock, Column
 from pyadaptivecards.container import ColumnSet
 from pyadaptivecards.options import Colors, HorizontalAlignment, Spacing, FontWeight
-import json
 import os
 from pyadaptivecards.options import FontSize
 from typing import List
@@ -44,19 +42,17 @@ class FindBookDialog(CancelAndHelpDialog):
         return await step_context.prompt(
             TextPrompt.__name__, PromptOptions(prompt=prompt_message)
         )
+        
     
     async def search_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         if step_context.result is not None:
             book_name=step_context.result
             validate_result = self._validate_title(book_name)
             if validate_result:
-                card= await self.find_book(book_name)
-                #visualizza risultati
-                #message_text = ("trovati")
-                #message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+                card= self.find_book(book_name)
                 await step_context.context.send_activity(MessageFactory.attachment(card))
 
-                message_text = "Desideri aggiungere un libro alla tua wishlist?"
+                message_text = "Desideri aggiungere il libro alla tua wishlist?"
                 prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
                 return await step_context.prompt(
                     ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message)
@@ -103,7 +99,7 @@ class FindBookDialog(CancelAndHelpDialog):
                 message_text = ("Il libro {} è stato aggiunto alla tua wishlist".format(book_to_add.name))
                 message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
                 await step_context.context.send_activity(message)
-                return await step_context.end_dialog
+                return await step_context.end_dialog()
         message_text = ("Si è verificato un errore durante l'aggiunta del libro {} alla tua wishlist".format(book_to_add.name))
         message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
         await step_context.context.send_activity(message)
@@ -112,34 +108,41 @@ class FindBookDialog(CancelAndHelpDialog):
 
     def create_result_card(self):
         for book in self.books:
-                if book.name!=None:
-                    title=book.name
-                    break
+            if book.name!=None:
+                title=book.name
+                break
         for book in self.books:
-                if book.author!=None:
-                    author=book.author
-                    break
+            if book.author!=None:
+                author=book.author
+                break
+        for book in self.books:
+            if book.genre!=None:
+                genre=book.genre
+                break
         
-        firstcolumnSet = ColumnSet([Column([TextBlock("Risultati", color=Colors(7), horizontalAlignment=HorizontalAlignment(2), wrap=True)])])
+        firstcolumnSet = ColumnSet([Column([TextBlock("RISULTATI", color=Colors(7), weight=FontWeight(3), horizontalAlignment=HorizontalAlignment(2), wrap=True)])])
         items=[]
-        items.append(TextBlock("{} di {} ".format(title, author), weight=FontWeight(3), wrap=True, isSubtle=True))
-        columns=[]
+        items.append(TextBlock("{} di {} ".format(title, author), weight=FontWeight(3), color=Colors(2), wrap=True, isSubtle=True))
+        items.append(TextBlock("Genere: {}".format(genre), weight=FontWeight(3), color=Colors(2), wrap=True, isSubtle=True))
+        columnsSet=[]
+     
         for book in self.books:
-            items.append(TextBlock("Nome del sito: {} ".format(book.site), spacing=Spacing(3), wrap=True))
-            items.append(TextBlock("Prezzo: {} ".format(book.price), spacing=Spacing(3), wrap=True))
+            items.append(TextBlock("Nome del sito: {} ".format(book.site), spacing=Spacing(3), wrap=True)) 
+            if book.price!=None:
+                items.append(TextBlock("Prezzo: {}€ ".format(book.price), spacing=Spacing(3), wrap=True))
+            else: 
+                items.append(TextBlock("Prezzo non disponibile", spacing=Spacing(3), wrap=True))
             items.append(TextBlock("Disponibilità: {} ".format(book.availability), spacing=Spacing(3), wrap=True))
             items.append(TextBlock("Link per l'acquisto: {} ".format(book.link), spacing=Spacing(3), wrap=True, color=Colors(5)))
-            columns.append(Column(items))
+            columnsSet.append(ColumnSet([Column(items)], separator=True, spacing=Spacing(4)))
             items=[]
-        columnSet= ColumnSet(columns, separator=True, spacing=Spacing(4))
-        card = AdaptiveCard(body=[firstcolumnSet, columnSet])
+        card = AdaptiveCard(body=[firstcolumnSet]+columnsSet)
 
         return CardFactory.adaptive_card(card.to_dict())
 
 
-    async def find_book(self, title: str):
-        r= requests.get("https://find-book-function.azurewebsites.net/api/FindBooksScraper?name={}&who=all".format(title))
-        time.sleep(25)
+    def find_book(self, title: str):
+        r= requests.get("https://find-book-function.azurewebsites.net/api/FindBooksScraper?name={}&who=all".format(title))      
         string_result=r.text.split("\n")
         book=BookInfo()
         print(string_result)
@@ -148,19 +151,20 @@ class FindBookDialog(CancelAndHelpDialog):
                 book=BookInfo()
                 book.site=s
             elif i%7==1:
-                book.name=s
+                book.name=s 
             elif i%7==2:
-                book.author=s
+                book.author=s 
             elif i%7==3:
-                book.availability=s
+                book.availability=s if s!="None" else "Non disponibile"
             elif i%7==4:
-                if s!=None:
+                if s!="None":
                     s=s.replace(",", ".")
-                try:
-                    book.price=float(s)
-                except ValueError:
+                    try:
+                        book.price=float(s)
+                    except ValueError:
+                        book.price=None
+                else:
                     book.price=None
-                book.price=None
             elif i%7==5:
                 book.genre=s
             elif i%7==6:

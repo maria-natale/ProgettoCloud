@@ -42,6 +42,7 @@ class MainDialog(ComponentDialog):
         
         self._luis_recognizer = luis_recognizer
         self.findbook_dialog_id=findbook.id
+        self.registration_dialog_id=registration_dialog.id
 
         self.add_dialog(
             OAuthPrompt(
@@ -75,7 +76,8 @@ class MainDialog(ComponentDialog):
                 "WFDialogLogin",
                 [
                     self.prompt_step,
-                    self.login_step
+                    self.login_step,
+                    self.continue_step
                 ]
             )
         )
@@ -92,13 +94,18 @@ class MainDialog(ComponentDialog):
             iduser=step_context.context.activity.from_property.id
             print("sono nel login")
             #controlla se è registrato nel database
-            if DatabaseManager.user_is_registered(iduser):
-                return await step_context.begin_dialog(registration_dialog.id) #se non è registrato
-            await step_context.context.send_activity("Sei loggato")
-            return await step_context.begin_dialog("WFDialog")
-        await step_context.context.send_activity("Login was not successful please try again.")
-        return await step_context.end_dialog()
-  
+            if not DatabaseManager.user_is_registered(iduser):
+                return await step_context.begin_dialog(self.registration_dialog_id) #se non è registrato
+            else:
+                return await step_context.next([])
+        else:
+            await step_context.context.send_activity("Login was not successful please try again.")
+            return await step_context.end_dialog()
+    
+
+    async def continue_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        await step_context.context.send_activity("Sei loggato")
+        return await step_context.begin_dialog("WFDialog")
         
 
     async def menu_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
@@ -133,6 +140,11 @@ class MainDialog(ComponentDialog):
             ),
             CardAction(
                 type=ActionTypes.im_back,
+                title ="Suggerisci libri",
+                value="suggerisci"
+            ),
+            CardAction(
+                type=ActionTypes.im_back,
                 title ="Logout",
                 value="logout"
             )
@@ -162,8 +174,11 @@ class MainDialog(ComponentDialog):
             await step_context.context.send_activity(prompt_message)
             return await step_context.next([])
         if (option=="cerca"):
-            return await step_context.begin_dialog(self.findbook_dialog_id, Book())
-        if (option=="logout"): #vedi logoutdialog
+            return await step_context.begin_dialog(self.findbook_dialog_id)
+        if (option=="logout"): 
+            bot_adapter: BotFrameworkAdapter = step_context.context.adapter
+            await bot_adapter.sign_out_user(step_context.context, self.connection_name)
+            await step_context.context.send_activity("Sei stato disconnesso.")
             return await step_context.cancel_all_dialogs()
 
     
