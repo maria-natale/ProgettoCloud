@@ -178,7 +178,8 @@ class MainDialog(ComponentDialog):
 
         if option=="info" or intent==Intent.INFO.value:
             info_card = self.create_adaptive_card_attachment()
-            await step_context.context.send_activity(MessageFactory.attachment(info_card))
+            resp = MessageFactory.attachment(info_card)
+            await step_context.context.send_activity(resp)
             return await step_context.next([])
         if option=="cerca" or intent==Intent.FIND_BOOK.value:
             return await step_context.begin_dialog(self.findbook_dialog_id)
@@ -231,13 +232,13 @@ class MainDialog(ComponentDialog):
     def create_adaptive_card_attachment(self):
         relative_path = os.path.abspath(os.path.dirname(__file__))
         path = os.path.join(relative_path, "../cards/info_card.json")
+        print('Path:' +path)
         with open(path) as in_file:
             card = json.load(in_file)
+        
+        print('Card:' +str(card))
 
-        return Attachment(
-            content_type="application/vnd.microsoft.card.adaptive", content=card
-        )
-
+        return CardFactory.adaptive_card(card)
 
 
 

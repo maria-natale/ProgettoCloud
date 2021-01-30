@@ -1,16 +1,28 @@
 {
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
     "type": "AdaptiveCard",
-    "version": "1.3",
+    "version": "1.0",
     "body": [
         {
             "type": "TextBlock",
-            "text": "Ciao sono BotTipBooks",
+            "text": "Ciao sono BotTipsBook",
             "size": "Large",
             "horizontalAlignment": "Center",
             "color": "Attention",
             "weight": "Bolder",
-            "wrap": true
+            "wrap": "true"
         },
+        {
+            "type": "ImageSet",
+            "imageSize": "medium",
+            "images": [
+              {
+                "type": "Image",
+                "url": "Logo.png"
+              }
+            ]
+        },
+      
         {
             "type": "TextBlock",
             "text": "Ecco cosa posso fare per te...",
@@ -18,7 +30,7 @@
             "horizontalAlignment": "Left",
             "color": "Warning",
             "weight": "Default",
-            "wrap": true
+            "wrap": "true"
         },
             
         {
@@ -28,8 +40,7 @@
             "horizontalAlignment": "Left",
             "color": "Dark",
             "weight": "Lighter",
-            "wrap": true
+            "wrap": "true"
         }
-    ],
-    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
+    ]
 }

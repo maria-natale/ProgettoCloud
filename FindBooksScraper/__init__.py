@@ -175,12 +175,18 @@ def scrape_amazon(url): #completo
     jsonStringResult = json.dumps(result.json())
     jsonResult = json.loads(jsonStringResult)
     logging.info(jsonResult)
-    scrape_am_result.append(jsonResult['product']['title'])
-    autori = jsonResult['product']['authors']
-    list_of_auth =""
-    for autore in autori:
-        list_of_auth+=autore['name']+' & '
-    scrape_am_result.append(list_of_auth)
+    try:
+        scrape_am_result.append(jsonResult['product']['title'])
+    except KeyError:
+        scrape_am_result.append(None)
+    try:
+        autori = jsonResult['product']['authors']
+        list_of_auth =""
+        for autore in autori:
+            list_of_auth+=autore['name']+' & '
+        scrape_am_result.append(list_of_auth)
+    except KeyError:
+        scrape_am_result.append(None)
     try:
         scrape_am_result.append(jsonResult['product']['buybox_winner']['availability']['raw'])
     except KeyError:
@@ -191,10 +197,13 @@ def scrape_amazon(url): #completo
         scrape_am_result.append(prezzo_amazon)
     except KeyError:
         scrape_am_result.append(None)
-    categorie = jsonResult['product']['categories']
-    for i in range(len(categorie)):
-        if i == len(categorie) - 1:
-            scrape_am_result.append(categorie[i]['name'])
+    try:
+        categorie = jsonResult['product']['categories']
+        for i in range(len(categorie)):
+            if i == len(categorie) - 1:
+                scrape_am_result.append(categorie[i]['name'])
+    except KeyError:
+        scrape_am_result.append(None)
     scrape_am_result.append(url)
     return scrape_am_result
 
@@ -345,7 +354,7 @@ def wich_scraper(name,who):
         for i in range(len(web_sites)):
             searchTerms = name+' '+ web_sites[i]
             call_bing(searchTerms, list_of_links)
-            time.sleep(4)  #necessario con il free tier di bing non si possono fare 4 chiamate in contemporaneo
+            time.sleep(1)  #necessario con il free tier di bing non si possono fare 4 chiamate in contemporaneo
         logging.info('chiamata prima di hoepli')
         result_of_hoepli_scrape = scrape_hoepli(list_of_links[len(list_of_links)-5]) #lista delle informazioni di hoepli
         logging.info('Hoepli LIST: '+str(result_of_hoepli_scrape))
