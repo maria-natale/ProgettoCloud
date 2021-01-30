@@ -69,17 +69,21 @@ def scrape_hoepli (url):   # in ordine restituisce titolo,autore,disponibilità 
     list_of_result = []
     list_of_result.append('Hoepli')
     tit = soup.find('h1')
-    tit= tit.text.lstrip()
-    tit= tit.rstrip()
+    vero_titolo = tit.text
+    li = vero_titolo.split('\t')
+    li = li[0].split('\r')
+    li = li[0].split('\n')
+    nuova = li[0].rstrip()
+    nuova = nuova.lstrip()
     if tit is not None:
-        list_of_result.append(tit)
+        list_of_result.append(nuova)
     else:
-        list_of_result.append('Titolo non disponibile')
+        list_of_result.append(None)
     aut = soup.find('h2',attrs={'class':'prodotto'})
     if aut is not None:
         list_of_result.append(aut.text)
     else:
-        list_of_result.append('Autore non disponibile')
+        list_of_result.append(None)
 
     is_disp = soup.find('p',attrs={'class':'disp_frase'})
     if is_disp is None:
@@ -94,7 +98,7 @@ def scrape_hoepli (url):   # in ordine restituisce titolo,autore,disponibilità 
             prezzo_senza_euro = prezzo_senza_euro.replace('€','')
             list_of_result.append(prezzo_senza_euro)
         else:
-            list_of_result.append('Prezzo non disponibile')
+            list_of_result.append(None)
 
     gener = soup.findAll("span",attrs={'class':'fs11'})
     genere =''
@@ -102,7 +106,7 @@ def scrape_hoepli (url):   # in ordine restituisce titolo,autore,disponibilità 
         if g.text is not None:
             genere+=g.text+', '
         else:
-            genere = 'Non disponibile'
+            genere = None
     list_of_result.append(genere)
     list_of_result.append(url)
     
@@ -133,15 +137,13 @@ def scrape_ibs(url):  #manca genere
         author=author.rstrip()
         ibs_result.append(author)
     else:
-        author = 'Autore non disponibile'
-        ibs_result.append(author)
+        ibs_result.append(None)
 
     if availability is not None:
         availability=availability.text
         ibs_result.append(availability)
     else:
-        availability = 'Non disponibile'
-        ibs_result.append(availability)
+        ibs_result.append(None)
 
     if priceString is not None:
         priceString=priceString.text
@@ -151,9 +153,9 @@ def scrape_ibs(url):  #manca genere
         price=float(priceString)
         ibs_result.append(price)
     else:
-        price ='Prezzo non disponibile'
+        price =None
         ibs_result.append(price)
-    ibs_result.append('Genere non rilevato')
+    ibs_result.append(None)
     ibs_result.append(url)
     return ibs_result
 
@@ -163,7 +165,7 @@ def scrape_amazon(url): #completo
     scrape_am_result =[]
     scrape_am_result.append('Amazon')
     params = {
-        'api_key': 'D11B6C96E3C64BD086DEA2A226307D27',
+        'api_key': 'A2E5C7D9C233454FAE27F2A0911C42A8',
         'type': 'product',
         'asin': ''+clear_url,   #prendiamo l'asin del libro
         'amazon_domain': 'amazon.it'
@@ -181,12 +183,14 @@ def scrape_amazon(url): #completo
     scrape_am_result.append(list_of_auth)
     try:
         scrape_am_result.append(jsonResult['product']['buybox_winner']['availability']['raw'])
+    except KeyError:
+        scrape_am_result.append('Non disponibile')
+    try:
         prezzo_amazon = jsonResult['product']['buybox_winner']['price']['raw']
         prezzo_amazon = prezzo_amazon.replace('€','')
         scrape_am_result.append(prezzo_amazon)
     except KeyError:
-        scrape_am_result.append('Non Disponibile')
-        scrape_am_result.append('Articolo non disponibile, prezzo non specificato')
+        scrape_am_result.append(None)
     categorie = jsonResult['product']['categories']
     for i in range(len(categorie)):
         if i == len(categorie) - 1:
@@ -235,11 +239,13 @@ def scrape_mondadori(url): #completo
             promo = float(promoString)
             newPrice = price - (5 / 100 * price).__round__(2)
         else:
-            newPrice = price
+            newPrice = None
     res_scrape.append(newPrice)
     genre = soup.find("a", class_="link sgn")
     if genre is not None:
         genre = genre.text
+    else:
+        genre = None
     res_scrape.append(genre)
     res_scrape.append(url)
     return res_scrape
@@ -251,19 +257,33 @@ def scrape_not_available_feltrinelli(url): #in caso il libro non sia disponibile
     result_ = []
     result_.append('Feltrinelli')
     resultTitle = soup.findAll('div',attrs={"class":"head-intro"})
-    for y in resultTitle:
-        result_.append(y.find('h1').text)
-        result_.append(y.find('a').text)
+    if resultTitle is None:
+        result_.append(None)
+        result_.append(None)
+    else: 
+        for y in resultTitle:
+            if y.find('h1') is not None:
+                result_.append(y.find('h1').text)
+            if y.find('a') is not None:
+                result_.append(y.find('a').text)
     result_.append('Non Disponibile')
-    prezz = soup.find('span',attrs={'class':'price'})
-    prezz = prezz.text.lstrip()
-    prezz = prezz.rstrip()
-    prezz = prezz.replace('€','')
+    if soup.find('span',attrs={'class':'price'}) is None:
+        prezz = None
+    else:
+        prezz = soup.find('span',attrs={'class':'price'})
+        prezz = prezz.text.lstrip()
+        prezz = prezz.rstrip()
+        prezz = prezz.replace('€','')
     result_.append(prezz)
     moreInfo = soup.findAll('div',attrs={"class":"block-content separate-block"})
-    for info in moreInfo:
-        result_.append(info.find('a').text)
-    result_.append(url)
+    if moreInfo is None:
+        result_.append(None)
+    else:
+        for info in moreInfo:
+            if info.find('a') is None:
+                result_.append(None)
+            else:
+                result_.append(info.find('a').text)
     return result_
 
 
@@ -275,27 +295,43 @@ def scrape_feltrinelli(url):
     result_felt.append('Feltrinelli')
     # Prende il titolo ed autore
     resultTitle = soup.findAll('div', attrs={"class": "head-intro"})
-    for y in resultTitle:
-        result_felt.append(y.find('span').text) #nome libro
-        result_felt.append(print(y.find('a').text)) #autore
+    if resultTitle is None:
+        result_felt.append(None)
+        result_felt.append(None)
+    else:
+        for y in resultTitle:
+            result_felt.append(y.find('span').text) #nome libro
+            result_felt.append(print(y.find('a').text)) #autore
 
     # Prende la disponibilità del prodotto
     resultAvailability = soup.findAll('div', attrs={"class": "availability"})
-    for span in resultAvailability:
-        result_felt.append(span.find('span').text) #disponibilità
+    if resultAvailability is None:
+        result_felt.append('Non disponibile')
+    else:
+        for span in resultAvailability:
+            if span.find('span') is not None:
+                result_felt.append(span.find('span').text) #disponibilità
 
     # Prende il prezzo
     resultsPrice = soup.findAll('div', attrs={"class": "price clearfix"})
-
-    for x in resultsPrice:
-        pr_senza = x.find('span').text
-        pr_senza = pr_senza.replace('€','')
-        result_felt.append(pr_senza)
+    if resultsPrice is None:
+        result_felt.append(None)
+    else:
+        for x in resultsPrice:
+            if x.find('span') is not None:
+                pr_senza = x.find('span').text
+                pr_senza = pr_senza.replace('€','')
+                result_felt.append(pr_senza)
+            else: 
+                result_felt.append(None)
 
     # Altre info sul prodotto
     moreInfo = soup.findAll('div', attrs={"class": "block-content separate-block"})
     for info in moreInfo:
-        result_felt.append(info.find('a').text)
+        if info.find('a') is None:
+            result_felt.append(None)
+        else:
+            result_felt.append(info.find('a').text)
     
     if len(result_felt)<5:
         result_felt = scrape_not_available_feltrinelli(url)
