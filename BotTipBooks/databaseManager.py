@@ -60,8 +60,8 @@ class DatabaseManager:
     
     @staticmethod 
     def find_user_info(iduser: str):
-        if DatabaseManager.user_is_registered(id):
-            user=User(id)
+        if DatabaseManager.user_is_registered(iduser):
+            user=User(iduser)
             with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
                 with conn.cursor() as cursor:
                     cursor.execute("SELECT ALL categoria FROM UtentiCategorie WHERE utente=?",iduser)
@@ -71,7 +71,8 @@ class DatabaseManager:
                         row = cursor.fetchone() 
             with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
                 with conn.cursor() as cursor:
-                    cursor.execute("SELECT ALL titolo, autore, categoria, prezzo, sito, disponibilita, link FROM Libri, Wishlist WHERE utente=?",iduser)
+                    cursor.execute('''SELECT ALL titolo, autore, categoria, prezzo, sito, disponibilita, link 
+                        FROM Libri, Wishlist WHERE utente=? and Libri.titolo=Wishlist.titoloLibro and Libri.autore=Wishlist.autoreLibro''',iduser)
                     row = cursor.fetchone()
                     while row:
                         bookinfo=BookInfo()
@@ -128,7 +129,19 @@ class DatabaseManager:
                     return book
             return book
         return None
-            
+        
+    
+    @staticmethod
+    def remove_wishlist(iduser, book: BookInfo):
+        with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
+            with conn.cursor() as cursor:
+                try:
+                    cursor.execute('''Delete from Wishlist where utente=? and titoloLibro=? and autoreLibro=?
+                    ''', iduser, book.name, book.author)
+                    conn.commit()
+                except pyodbc.IntegrityError:
+                    return False
+            return True
             
 
     

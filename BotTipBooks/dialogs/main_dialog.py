@@ -6,6 +6,7 @@ from botbuilder.dialogs import (
     WaterfallDialog,
     WaterfallStepContext,
     DialogTurnResult,
+    DialogContext
 )
 from botbuilder.schema import (
     ChannelAccount,
@@ -16,7 +17,7 @@ from botbuilder.schema import (
 )
 from botbuilder.dialogs.prompts import TextPrompt, PromptOptions, ChoicePrompt
 from botbuilder.core import MessageFactory, TurnContext, CardFactory, UserState
-from botbuilder.schema import InputHints, SuggestedActions
+from botbuilder.schema import Attachment, InputHints, SuggestedActions
 from botbuilder.dialogs.choices import Choice
 from bot_recognizer import BotRecognizer
 from .findbook_dialog import FindBookDialog
@@ -31,9 +32,13 @@ from databaseManager import DatabaseManager
 from botbuilder.schema._connector_client_enums import ActivityTypes
 from botbuilder.dialogs.dialog import Dialog
 from helpers.luis_helper import LuisHelper,Intent
+from .wishlist_dialog import WishlistDialog
+import os
+import json
 
 registration_dialog=RegistrationDialog()
 findbook=FindBookDialog()
+wishlist_dialog=WishlistDialog()
 
 class MainDialog(ComponentDialog):
     
@@ -44,6 +49,8 @@ class MainDialog(ComponentDialog):
         self._luis_recognizer = luis_recognizer
         self.findbook_dialog_id=findbook.id
         self.registration_dialog_id=registration_dialog.id
+        self.wishlist_dialog_id=wishlist_dialog.id
+        wishlist_dialog.set_recognizer(luis_recognizer)
 
         self.add_dialog(
             OAuthPrompt(
@@ -71,6 +78,7 @@ class MainDialog(ComponentDialog):
         )
         self.add_dialog(findbook)
         self.add_dialog(registration_dialog)
+        self.add_dialog(wishlist_dialog)
 
         self.add_dialog(
             WaterfallDialog(
@@ -84,6 +92,7 @@ class MainDialog(ComponentDialog):
         )
 
         self.initial_dialog_id = "WFDialogLogin"
+        self.skip=False
         
         
 
@@ -164,35 +173,36 @@ class MainDialog(ComponentDialog):
     async def options_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         option=step_context.result
         print('Option is: '+option)
-        MESSAGE_INFO= "INFO "
-        intent = await LuisHelper.execute_luis_query(self._luis_recognizer,option)
-        print('Intent is: '+intent)
+        intent = await LuisHelper.execute_luis_query(self._luis_recognizer,step_context.context)
+        print('Intent is: '+str(intent))
 
-        if (option=="info"):
-            message_text = (
-            str(step_context.options)
-            if step_context.options
-            else MESSAGE_INFO
-            )
-            prompt_message = MessageFactory.text(
-                message_text)
-            await step_context.context.send_activity(prompt_message)
+        if option=="info" or intent==Intent.INFO.value:
+            info_card = self.create_adaptive_card_attachment()
+            await step_context.context.send_activity(MessageFactory.attachment(info_card))
             return await step_context.next([])
-        if (option=="cerca"):
+        if option=="cerca" or intent==Intent.FIND_BOOK.value:
             return await step_context.begin_dialog(self.findbook_dialog_id)
-        if (option=="logout"): 
+        if option=="wishlist" or intent==Intent.SHOW_WISHLIST.value:
+            self.skip=True
+            return await step_context.begin_dialog(self.wishlist_dialog_id)
+        if option=="logout": 
             bot_adapter: BotFrameworkAdapter = step_context.context.adapter
             await bot_adapter.sign_out_user(step_context.context, self.connection_name)
             await step_context.context.send_activity("Sei stato disconnesso.")
             return await step_context.cancel_all_dialogs()
+        
 
     
     async def final_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        message_text = "Posso fare qualcos'altro per te?"
-        prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
-        return await step_context.prompt(
+        if not self.skip:
+            message_text = "Posso fare qualcos'altro per te?"
+            prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
+            return await step_context.prompt(
                 ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message)
-                )
+            )
+        else:
+            self.skip=False
+            return await step_context.next(True)
 
 
     async def loop_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
@@ -200,6 +210,33 @@ class MainDialog(ComponentDialog):
         if result:
             return await step_context.replace_dialog("WFDialog")
         return await step_context.cancel_all_dialogs()
+
+
+    async def interrupt(self, inner_dc: DialogContext) -> DialogTurnResult:
+        if inner_dc.context.activity.type == ActivityTypes.message:
+            text = inner_dc.context.activity.text.lower()
+
+            cancel_message_text = "Cancelling"
+            cancel_message = MessageFactory.text(
+                cancel_message_text, cancel_message_text, InputHints.ignoring_input
+            )
+
+            if text in ("cancel", "quit", "esci", "cancella"):
+                await inner_dc.context.send_activity(cancel_message)
+                return await inner_dc.cancel_all_dialogs()
+
+        return None
+    
+
+    def create_adaptive_card_attachment(self):
+        relative_path = os.path.abspath(os.path.dirname(__file__))
+        path = os.path.join(relative_path, "../cards/info_card.json")
+        with open(path) as in_file:
+            card = json.load(in_file)
+
+        return Attachment(
+            content_type="application/vnd.microsoft.card.adaptive", content=card
+        )
 
 
 

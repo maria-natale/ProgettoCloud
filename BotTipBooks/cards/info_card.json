@@ -1,0 +1,35 @@
+{
+    "type": "AdaptiveCard",
+    "version": "1.3",
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "Ciao sono BotTipBooks",
+            "size": "Large",
+            "horizontalAlignment": "Center",
+            "color": "Attention",
+            "weight": "Bolder",
+            "wrap": true
+        },
+        {
+            "type": "TextBlock",
+            "text": "Ecco cosa posso fare per te...",
+            "size": "Medium",
+            "horizontalAlignment": "Left",
+            "color": "Warning",
+            "weight": "Default",
+            "wrap": true
+        },
+            
+        {
+            "type": "TextBlock",
+            "text": "Sono un bot che ti permette di ricercare i libri che preferisci e di presentarti la lista dei migliori siti che vendono tale libro e di confrontarne i prezzi. Inoltre sono in grado di mantenere per te la lista dei libri che ti interessano all'interno di una wishlist che viene continuamente analizzata, al fine di inviarti notifiche al variare del prezzo e di un eventuale disponibilità del libro che inizialmente era fuori catalogo. Sono in grado anche di suggerirti nuovi libri in caso tu volessi leggere altri libri, ma non hai la più pallida idea di quali potrebbero fare al casto tuo :). Puoi utilizzarmi come preferisci, puoi utilizzare i bottoni del menù oppure digitare quello che intendi fare, sarò in grado di comprenderti al meglio!",
+            "size": "Medium",
+            "horizontalAlignment": "Left",
+            "color": "Dark",
+            "weight": "Lighter",
+            "wrap": true
+        }
+    ],
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
+}

@@ -85,16 +85,15 @@ class FindBookDialog(CancelAndHelpDialog):
             if book.site.lower()==result.lower():
                 book_to_add=book
                 break
-        if book_to_add.name is None: #se il nome del libro del sito cercato non è stato preso
-            for book in self.books:
-                if book.name!=None:
-                    book_to_add.name=book.name
-                    break
-        if book_to_add.author is None: #se il nome dell'autore del sito cercato non è stato preso
-            for book in self.books:
-                if book.author is not None:
-                    book_to_add.author=book.author
-                    break
+        for book in self.books:
+            if book.name is not None:
+                book_to_add.name=book.name
+                break
+        for book in self.books:
+            if book.author is not None:
+                book_to_add.author=book.author
+                break
+                    
         genres=[]
         for book in self.books:
             if book.genre is not None:
@@ -162,9 +161,9 @@ class FindBookDialog(CancelAndHelpDialog):
                 book=BookInfo()
                 book.site=s 
             elif i%7==1:
-                book.name=s if s!="None" else None
+                book.name=s if s!="None" or s!='' else None
             elif i%7==2:
-                book.author=s if s!="None" else None
+                book.author=s if s!="None" or s!='' else None
             elif i%7==3:
                 book.availability=s if s!="None" else "Non disponibile"
             elif i%7==4:
@@ -177,7 +176,7 @@ class FindBookDialog(CancelAndHelpDialog):
                 else:
                     book.price=None
             elif i%7==5:
-                book.genre=s  if s!="None" else None
+                book.genre=s  if s!="None" or s!='' else None
             elif i%7==6:
                 book.link=s
                 self.books.append(book)
