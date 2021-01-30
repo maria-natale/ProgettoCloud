@@ -30,6 +30,7 @@ from .registration_dialog import RegistrationDialog
 from databaseManager import DatabaseManager
 from botbuilder.schema._connector_client_enums import ActivityTypes
 from botbuilder.dialogs.dialog import Dialog
+from helpers.luis_helper import LuisHelper,Intent
 
 registration_dialog=RegistrationDialog()
 findbook=FindBookDialog()
@@ -162,7 +163,10 @@ class MainDialog(ComponentDialog):
 
     async def options_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         option=step_context.result
+        print('Option is: '+option)
         MESSAGE_INFO= "INFO "
+        intent = await LuisHelper.execute_luis_query(self._luis_recognizer,option)
+        print('Intent is: '+intent)
 
         if (option=="info"):
             message_text = (
