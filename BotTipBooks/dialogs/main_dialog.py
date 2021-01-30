@@ -236,7 +236,6 @@ class MainDialog(ComponentDialog):
         with open(path) as in_file:
             card = json.load(in_file)
         
-        print('Card:' +str(card))
 
         return CardFactory.adaptive_card(card)
 
