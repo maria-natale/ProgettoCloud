@@ -4,6 +4,7 @@ from botbuilder.schema import ActivityTypes, InputHints
 from botbuilder.core import MessageFactory
 from .cancel_and_help_dialog import CancelAndHelpDialog
 from botbuilder.dialogs.prompts.prompt_options import PromptOptions
+from botbuilder.dialogs.prompts import PromptValidatorContext
 from botbuilder.dialogs.prompts import ConfirmPrompt
 import requests
 from bean import BookInfo
@@ -23,11 +24,17 @@ class FindBookDialog(CancelAndHelpDialog):
     def __init__(self, dialog_id: str = None):
         super(FindBookDialog, self).__init__(dialog_id or FindBookDialog.__name__)
 
-        self.add_dialog(TextPrompt(TextPrompt.__name__))
-        self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__))
+        self.add_dialog(TextPrompt("TextPromptLibro", FindBookDialog.validateName))
+        self.add_dialog(TextPrompt("TextPromptSito", FindBookDialog.validateSite))
+        self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__, FindBookDialog.yes_noValidator))
         self.add_dialog(
             WaterfallDialog(
-                "WFDialog", [self.prompt_step, self.search_step, self.confirm_step, self.add_to_wishlist]
+                "WFDialog", [self.prompt_step, 
+                self.search_step, 
+                self.confirmRec_step,
+                self.prompt_to_wish,
+                self.confirm_step, 
+                self.add_to_wishlist]
             )
         )
 
@@ -41,29 +48,40 @@ class FindBookDialog(CancelAndHelpDialog):
             message_text, message_text, InputHints.expecting_input
         )
         return await step_context.prompt(
-            TextPrompt.__name__, PromptOptions(prompt=prompt_message)
+            "TextPromptLibro", PromptOptions(prompt=prompt_message,
+            retry_prompt=MessageFactory.text('''Quale libro vuoi cercare? Il nome del libro deve avere lunghezza
+            compresa tra 5 e 30'''))
         )
         
     
     async def search_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        if step_context.result is not None:
-            book_name=step_context.result
-            validate_result = self._validate_title(book_name)
-            if validate_result:
-                card= self.find_book(book_name)
-                await step_context.context.send_activity(MessageFactory.attachment(card))
+        book_name=step_context.result
+        card= self.find_book(book_name)
+        await step_context.context.send_activity(MessageFactory.attachment(card))
 
-                message_text = "Desideri aggiungere il libro alla tua wishlist?"
-                prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
-                return await step_context.prompt(
-                    ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message)
-                    )
-        await step_context.context.send_activity(
-                MessageFactory.text(
-                    "Input non valido"
-                )
+        message_text = "Vuoi conoscere le recensioni sul libro?"
+        prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
+        return await step_context.prompt(
+            ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message,
+                retry_prompt=MessageFactory.text('''Vuoi conoscere le recensioni sul libro? Scrivi yes o no'''))
             )
-        return await step_context.end_dialog()
+
+
+    async def confirmRec_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        result=step_context.result
+        if result:
+            pass
+        return await step_context.next([])
+
+
+    async def prompt_to_wish(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        message_text = "Desideri aggiungere il libro alla tua wishlist?"
+        prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
+        return await step_context.prompt(
+            ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message,
+                retry_prompt=MessageFactory.text('''Desideri aggiungere il libro alla tua wishlist? 
+                Scrivi yes o no'''))
+            )
 
 
     async def confirm_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
@@ -72,7 +90,9 @@ class FindBookDialog(CancelAndHelpDialog):
             message_text="Su quale sito desideri acquistare il libro?"
             prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
             return await step_context.prompt(
-                TextPrompt.__name__, PromptOptions(prompt=prompt_message)
+                "TextPromptSito", PromptOptions(prompt=prompt_message,
+                retry_prompt=MessageFactory.text('''Su quale sito desideri acquistare il libro? Inserisci
+                un sito valido''')),
             )
         return await step_context.end_dialog()
 
@@ -185,10 +205,26 @@ class FindBookDialog(CancelAndHelpDialog):
         return self.create_result_card()
         
 
-    def _validate_title(self, user_input: str) -> bool:
-        if not len(user_input)>=5:
-            return False
-        return True
+    @staticmethod
+    async def validateName(prompt_context: PromptValidatorContext) -> bool:
+        return (
+            prompt_context.recognized.succeeded
+            and 5 <= len(prompt_context.recognized.value) <= 30
+        )
+    
+    @staticmethod
+    async def yes_noValidator(prompt_context: PromptValidatorContext) -> bool:
+        return (
+            prompt_context.recognized.succeeded
+            and isinstance(prompt_context.recognized.value, bool)
+        )
+    
+    @staticmethod
+    async def validateSite(prompt_context: PromptValidatorContext) -> bool:
+        return (
+            prompt_context.recognized.succeeded
+            and str(prompt_context.recognized.value).lower() in ["mondadori", "feltrinelli", "ibs", "amazon", "hoepli"]
+        )
     
 
     

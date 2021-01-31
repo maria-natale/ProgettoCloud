@@ -35,8 +35,8 @@
             
         {
             "type": "TextBlock",
-            "text": "Sono un bot che ti permette di ricercare i libri che preferisci e di presentarti la lista dei migliori siti che vendono tale libro e di confrontarne i prezzi. Inoltre sono in grado di mantenere per te la lista dei libri che ti interessano all'interno di una wishlist che viene continuamente analizzata, al fine di inviarti notifiche al variare del prezzo e di un eventuale disponibilità del libro che inizialmente era fuori catalogo. Sono in grado anche di suggerirti nuovi libri in caso tu volessi leggere altri libri, ma non hai la più pallida idea di quali potrebbero fare al casto tuo :). Puoi utilizzarmi come preferisci, puoi utilizzare i bottoni del menù oppure digitare quello che intendi fare, sarò in grado di comprenderti al meglio!",
-            "size": "Medium",
+            "text": "Sono un bot che ti permette di ricercare i libri che preferisci e di presentarti la lista dei migliori siti che vendono tale libro e di confrontarne i prezzi. Inoltre sono in grado di mantenere per te la lista dei libri che ti interessano all'interno di una wishlist che viene continuamente analizzata, al fine di inviarti notifiche al variare del prezzo e di un eventuale disponibilita' del libro che inizialmente era fuori catalogo. Sono in grado anche di suggerirti nuovi libri in caso tu volessi leggere altri libri, ma non hai la piu' pallida idea di quali potrebbero fare al casto tuo :). Puoi utilizzarmi come preferisci, puoi utilizzare i bottoni del menu oppure digitare quello che intendi fare, saro' in grado di comprenderti al meglio!",
+            "size": "Small",
             "horizontalAlignment": "Left",
             "color": "Dark",
             "weight": "Lighter",

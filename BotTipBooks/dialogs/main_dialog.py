@@ -33,12 +33,14 @@ from botbuilder.schema._connector_client_enums import ActivityTypes
 from botbuilder.dialogs.dialog import Dialog
 from helpers.luis_helper import LuisHelper,Intent
 from .wishlist_dialog import WishlistDialog
+from .suggest_dialog import SuggestBooksDialog
 import os
 import json
 
 registration_dialog=RegistrationDialog()
 findbook=FindBookDialog()
 wishlist_dialog=WishlistDialog()
+suggest_dialog=SuggestBooksDialog()
 
 class MainDialog(ComponentDialog):
     
@@ -50,6 +52,7 @@ class MainDialog(ComponentDialog):
         self.findbook_dialog_id=findbook.id
         self.registration_dialog_id=registration_dialog.id
         self.wishlist_dialog_id=wishlist_dialog.id
+        self.suggest_dialog_id=suggest_dialog.id
         wishlist_dialog.set_recognizer(luis_recognizer)
 
         self.add_dialog(
@@ -79,6 +82,7 @@ class MainDialog(ComponentDialog):
         self.add_dialog(findbook)
         self.add_dialog(registration_dialog)
         self.add_dialog(wishlist_dialog)
+        self.add_dialog(suggest_dialog)
 
         self.add_dialog(
             WaterfallDialog(
@@ -106,6 +110,8 @@ class MainDialog(ComponentDialog):
             print("sono nel login")
             #controlla se è registrato nel database
             if not DatabaseManager.user_is_registered(iduser):
+                await step_context.context.send_activity(MessageFactory.text('''Non sei registrato, ti farò 
+                selezionare tre categorie di interesse per effettuare la registrazione'''))
                 return await step_context.begin_dialog(self.registration_dialog_id) #se non è registrato
             else:
                 return await step_context.next([])
@@ -186,11 +192,16 @@ class MainDialog(ComponentDialog):
         if option=="wishlist" or intent==Intent.SHOW_WISHLIST.value:
             self.skip=True
             return await step_context.begin_dialog(self.wishlist_dialog_id)
+        if option=="suggerisci" or intent==Intent.TIP_BOOK.value:
+            return await step_context.begin_dialog(self.suggest_dialog_id)
         if option=="logout": 
             bot_adapter: BotFrameworkAdapter = step_context.context.adapter
             await bot_adapter.sign_out_user(step_context.context, self.connection_name)
             await step_context.context.send_activity("Sei stato disconnesso.")
             return await step_context.cancel_all_dialogs()
+        if option=="quit" or option=="esci":
+            return await step_context.cancel_all_dialogs() 
+
         
 
     
@@ -212,21 +223,6 @@ class MainDialog(ComponentDialog):
             return await step_context.replace_dialog("WFDialog")
         return await step_context.cancel_all_dialogs()
 
-
-    async def interrupt(self, inner_dc: DialogContext) -> DialogTurnResult:
-        if inner_dc.context.activity.type == ActivityTypes.message:
-            text = inner_dc.context.activity.text.lower()
-
-            cancel_message_text = "Cancelling"
-            cancel_message = MessageFactory.text(
-                cancel_message_text, cancel_message_text, InputHints.ignoring_input
-            )
-
-            if text in ("cancel", "quit", "esci", "cancella"):
-                await inner_dc.context.send_activity(cancel_message)
-                return await inner_dc.cancel_all_dialogs()
-
-        return None
     
 
     def create_adaptive_card_attachment(self):

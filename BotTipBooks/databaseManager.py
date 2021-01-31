@@ -64,10 +64,13 @@ class DatabaseManager:
             user=User(iduser)
             with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
                 with conn.cursor() as cursor:
-                    cursor.execute("SELECT ALL categoria FROM UtentiCategorie WHERE utente=?",iduser)
+                    cursor.execute('''SELECT ALL nomeCategoria, sinonimi FROM UtentiCategorie, Categorie
+                     WHERE utente=? and UtentiCategorie.categoria=Categorie.nomeCategoria''',iduser)
                     row = cursor.fetchone()
                     while row:
-                        user.add_category(str(row[0]))
+                        c=Category(str(row[0]))
+                        c.synonyms=str(row[1]).split(";")
+                        user.add_category(c)
                         row = cursor.fetchone() 
             with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
                 with conn.cursor() as cursor:

@@ -7,5 +7,8 @@ from .findbook_dialog import FindBookDialog
 from .logout_dialog import LogoutDialog
 from .registration_dialog import RegistrationDialog
 from .wishlist_dialog import WishlistDialog 
+from .suggest_dialog import SuggestBooksDialog
 
-__all__ = [ "CancelAndHelpDialog", "MainDialog", "FindBookDialog", "LogoutDialog", "RegistrationDialog", "WishlistDialog"]
+
+__all__ = [ "CancelAndHelpDialog", "MainDialog", "FindBookDialog",
+     "LogoutDialog", "RegistrationDialog", "WishlistDialog", "SuggestBooksDialog"]

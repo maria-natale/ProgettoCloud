@@ -11,13 +11,14 @@ from pyadaptivecards.options import Colors, FontWeight, HorizontalAlignment, Spa
 from botbuilder.schema import InputHints
 from bot_recognizer import BotRecognizer
 from helpers.luis_helper import Intent, LuisHelper
+from botbuilder.dialogs.prompts import PromptValidatorContext
 import time
 
 class WishlistDialog(CancelAndHelpDialog):
     def __init__(self, dialog_id: str = None):
         super(WishlistDialog, self).__init__(dialog_id or WishlistDialog.__name__)
         self.add_dialog(TextPrompt(TextPrompt.__name__))
-        self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__))
+        self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__, WishlistDialog.yes_noValidator))
         self.add_dialog(
             WaterfallDialog(
                 "WFDialog", [self.first_step, self.input_step, self.begin_next]
@@ -92,7 +93,8 @@ class WishlistDialog(CancelAndHelpDialog):
             message_text = "Sei sicuro di voler cancellare {}?".format(self.book_to_remove.name)
             prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
             return await step_context.prompt(
-                ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message)
+                ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message,
+                retry_prompt='''Sei sicuro di voler cancellare? Scrivi yes o no''')
             )
         else:
             message_text="Il libro {} non è stato trovato nella tua wishlist. Per favore, inserisci nuovamente il titolo".format(result)
@@ -111,9 +113,6 @@ class WishlistDialog(CancelAndHelpDialog):
             return await step_context.replace_dialog("WFDialogCancella")
         result=step_context.result
         if result:
-            #for i,book in enumerate(self.user.wishlist):
-             #   if book.name==self.book_to_remove.name:
-              #      self.user.wishlist.re
             self.user.wishlist.remove(self.book_to_remove)
             DatabaseManager.remove_wishlist(self.user.idUser, self.book_to_remove)
             message_text="Il libro {} è stato rimosso correttamente.".format(self.book_to_remove.name)
@@ -169,8 +168,14 @@ class WishlistDialog(CancelAndHelpDialog):
             card = AdaptiveCard(body=[firstcolumnSet, columnSet])
             return (CardFactory.adaptive_card(card.to_dict()), False)
 
-        
-    
     
     def set_recognizer(self, luis_recognizer: BotRecognizer):
         self._luis_recognizer=luis_recognizer
+
+
+    @staticmethod
+    async def yes_noValidator(prompt_context: PromptValidatorContext) -> bool:
+        return (
+            prompt_context.recognized.succeeded
+            and isinstance(prompt_context.recognized.value, bool)
+        )
