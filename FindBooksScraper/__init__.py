@@ -36,7 +36,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
        logging.info(list_of_results)
        if len(list_of_results)<=5:
            return func.HttpResponse(f"""{list_of_results[0]} \n {list_of_results[1]} \n
-            {list_of_results[2]} \n {list_of_results[3]} \n {list_of_results[4]}\n {list_of_result[5]}\n""")
+            {list_of_results[2]} \n {list_of_results[3]} \n {list_of_results[4]}\n {list_of_results[5]}\n""")
        else:
            all_of_res =''
            for elem in list_of_results:
@@ -165,7 +165,7 @@ def scrape_amazon(url): #completo
     scrape_am_result =[]
     scrape_am_result.append('Amazon')
     params = {
-        'api_key': 'A2E5C7D9C233454FAE27F2A0911C42A8',
+        'api_key': '78ECAD39F78C435C8D50238C0406637B',
         'type': 'product',
         'asin': ''+clear_url,   #prendiamo l'asin del libro
         'amazon_domain': 'amazon.it'
@@ -218,23 +218,33 @@ def scrape_mondadori(url): #completo
     title = soup.find("h1", class_="title")
     if title is not None:
         title = title.text
-        title = title.lstrip()
-        title = title.rstrip()
-    res_scrape.append(title)
+        li = title.split('\t')
+        li = li[0].split('\r')
+        li = li[0].split('\n')
+        nuova = li[0].rstrip()
+        nuova = nuova.lstrip()
+        res_scrape.append(nuova)
+    else:
+        res_scrape.append(None)
     author = soup.find("a", class_="link nti-author")
     if author is not None:
         author = author.text
         author = author.lstrip()
         author = author.rstrip()
-    res_scrape.append(author)
+        res_scrape.append(author)
+    else:
+        res_scrape.append(None)
     availability = soup.find("span", class_="big lightGreen")
     if availability is not None:
         availability = availability.text.rstrip()
         availability = availability.lstrip()
-    res_scrape.append(availability)
+        res_scrape.append(availability)
+    else:
+        res_scrape.append(None)
     priceString = soup.find("span", class_="old-price")  # prezzo
     if priceString is None:
         priceString = soup.find("span", class_="priceBox")
+        
 
     promoString = soup.find("span", class_="promo")
     newPrice = None
@@ -246,10 +256,15 @@ def scrape_mondadori(url): #completo
         if promoString is not None:
             promoString = promoString.text[1:len(promoString.text) - 1]
             promo = float(promoString)
-            newPrice = price - (5 / 100 * price).__round__(2)
+            newPrice = price - (promo/ 100 * price).__round__(2)
         else:
             newPrice = None
-    res_scrape.append(newPrice)
+        if newPrice is None:
+            res_scrape.append(price)
+        else:
+            res_scrape.append(newPrice)
+    else:
+        res_scrape.append(None)
     genre = soup.find("a", class_="link sgn")
     if genre is not None:
         genre = genre.text

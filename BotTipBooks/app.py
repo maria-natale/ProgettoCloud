@@ -19,7 +19,7 @@ from botbuilder.core import (
     UserState,
 )
 from botbuilder.core.integration import aiohttp_error_middleware
-from botbuilder.schema import Activity
+from botbuilder.schema import Activity, ActivityTypes, ConversationReference
 
 from config import DefaultConfig
 from dialogs import MainDialog, FindBookDialog
@@ -45,12 +45,15 @@ CONVERSATION_STATE = ConversationState(MEMORY)
 # Create adapter.
 # See https://aka.ms/about-bot-adapter to learn more about how bots work.
 ADAPTER = AdapterWithErrorHandler(SETTINGS, CONVERSATION_STATE)
+# Create a shared dictionary.  The Bot will add conversation references when users
+# join the conversation and send messages.
+CONVERSATION_REFERENCES: Dict[str, ConversationReference] = dict()
 
 # Create dialogs and Bot
 RECOGNIZER = BotRecognizer(CONFIG)
 FINDBOOK_DIALOG = FindBookDialog()
 DIALOG = MainDialog(CONFIG.CONNECTION_NAME, RECOGNIZER)
-BOT = DialogBot(CONVERSATION_STATE, USER_STATE, DIALOG)
+BOT = DialogBot(CONVERSATION_STATE, USER_STATE, DIALOG,CONVERSATION_REFERENCES)
 
 
 # Listen for incoming requests on /api/messages.
@@ -72,6 +75,27 @@ async def messages(req: Request) -> Response:
 
 APP = web.Application(middlewares=[aiohttp_error_middleware])
 APP.router.add_post("/api/messages", messages)
+
+# Listen for requests on /api/notify, and send a messages to all conversation members.
+async def notify(req: Request) -> Response:  # pylint: disable=unused-argument
+    await _send_proactive_message()
+    return Response(status=HTTPStatus.OK, text="Proactive messages have been sent")
+
+
+# Send a message to all conversation members.
+# This uses the shared Dictionary that the Bot adds conversation references to.
+async def _send_proactive_message():
+    for conversation_reference in CONVERSATION_REFERENCES.values():
+        await ADAPTER.continue_conversation(
+            conversation_reference,
+            lambda turn_context: turn_context.send_activity("proactive hello"),
+            APP_ID,
+        )
+
+
+APP = web.Application(middlewares=[aiohttp_error_middleware])
+APP.router.add_post("/api/messages", messages)
+APP.router.add_get("/api/notify", notify)
 
 if __name__ == "__main__":
     try:
