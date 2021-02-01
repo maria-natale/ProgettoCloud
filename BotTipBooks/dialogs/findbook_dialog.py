@@ -18,6 +18,9 @@ import os
 from pyadaptivecards.options import FontSize
 from typing import List
 import time
+import json
+import re
+from text_analyzer import TextAnalyzer
 
 
 class FindBookDialog(CancelAndHelpDialog):
@@ -69,8 +72,30 @@ class FindBookDialog(CancelAndHelpDialog):
 
     async def confirmRec_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         result=step_context.result
+        link=None
         if result:
-            pass
+            for book  in self.books:
+                if book.site.lower()=="amazon":
+                    link=book.link
+                    break
+            if link is not None:
+                results, mean = FindBookDialog.get_reviews(link)
+                max=results["positive"]
+                strMax = "Ti consiglio fortemente l'acquisto."
+                if results["negative"] > max:
+                    max = results["negative"]
+                    strMax = "Non te lo consiglio affatto."
+                elif results["neutral"] > max:
+                    max = results["neutral"]
+                    strMax = "Ti consiglio di dargli un'occhiata."
+                message_text = ('''Ho analizzato le recensioni.\nI lettori hanno espresso {} opinioni positive,
+                {} opinioni neutrali e {} opinioni negative.\nLa media del valore delle recensioni è {} stelle.\n{}
+                '''.format(results["positive"], results["neutral"], results["negative"], mean, strMax))
+                message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+                await step_context.context.send_activity(message)
+            message_text = ('''Errore durante l'analisi delle recensioni''')
+            message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+            await step_context.context.send_activity(message)
         return await step_context.next([])
 
 
@@ -225,6 +250,43 @@ class FindBookDialog(CancelAndHelpDialog):
             prompt_context.recognized.succeeded
             and str(prompt_context.recognized.value).lower() in ["mondadori", "feltrinelli", "ibs", "amazon", "hoepli"]
         )
+    
+
+    @staticmethod
+    def get_reviews(link: str):
+        asin = link[link.rindex('/') + 1:]
+        params = {
+            'api_key': '78ECAD39F78C435C8D50238C0406637B',
+            'type': 'reviews',
+            'amazon_domain': 'amazon.it',
+            'asin': asin
+        }
+
+        # make the http GET request to Rainforest API
+        api_result = requests.get('https://api.rainforestapi.com/request', params)
+
+        jsonStringResult = json.dumps(api_result.json())
+        jsonResult = json.loads(jsonStringResult)
+        print(jsonResult)
+        reviews = jsonResult["reviews"]
+        list_of_body=[]
+        for review in reviews:
+            list_of_body.append(review["body"])
+        
+        sum=0
+        for review in reviews:
+            sum+=float(review["rating"])
+        
+        if len(reviews)>0:
+            mean=sum/len(reviews)
+        else:
+            mean=0
+        
+        text_analyzer=TextAnalyzer()
+        results = text_analyzer.sentiment_analysis(list_of_body)
+        
+        return (results, mean)
+
     
 
     

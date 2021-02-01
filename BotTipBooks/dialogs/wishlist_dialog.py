@@ -94,7 +94,7 @@ class WishlistDialog(CancelAndHelpDialog):
             prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
             return await step_context.prompt(
                 ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message,
-                retry_prompt='''Sei sicuro di voler cancellare? Scrivi yes o no''')
+                retry_prompt=MessageFactory.text('''Sei sicuro di voler cancellare? Scrivi yes o no'''))
             )
         else:
             message_text="Il libro {} non è stato trovato nella tua wishlist. Per favore, inserisci nuovamente il titolo".format(result)

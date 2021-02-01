@@ -7,7 +7,7 @@ from helpers.dialog_helper import DialogHelper
 import os
 import json
 from typing import List
-from botbuilder.schema import Attachment, ChannelAccount
+from botbuilder.schema import Attachment, ChannelAccount, ConversationReference
 from bean import User
 from botbuilder.dialogs.dialog_set import DialogSet
 
@@ -20,10 +20,11 @@ class DialogBot(ActivityHandler):
             raise Exception("[DialogBot]: Missing parameter. user_state is required")
         if dialog is None:
             raise Exception("[DialogBot]: Missing parameter. dialog is required")
-
+        
         self.conversation_state = conversation_state
         self.user_state = user_state
         self.dialog = dialog
+    
 
     
     async def on_members_added_activity(self, members_added: List[ChannelAccount], turn_context: TurnContext):
@@ -59,3 +60,4 @@ class DialogBot(ActivityHandler):
         return Attachment(
             content_type="application/vnd.microsoft.card.adaptive", content=card
         )
+    
