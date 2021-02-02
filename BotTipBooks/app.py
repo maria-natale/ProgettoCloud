@@ -23,7 +23,7 @@ from botbuilder.schema import Activity, ActivityTypes, ConversationReference
 
 from config import DefaultConfig
 from dialogs import MainDialog, FindBookDialog
-
+from typing import Dict
 from adapter_with_error_handler import AdapterWithErrorHandler
 from bot_recognizer import BotRecognizer
 from pip._internal import req
@@ -73,8 +73,7 @@ async def messages(req: Request) -> Response:
     return Response(status=HTTPStatus.OK)
 
 
-APP = web.Application(middlewares=[aiohttp_error_middleware])
-APP.router.add_post("/api/messages", messages)
+
 
 # Listen for requests on /api/notify, and send a messages to all conversation members.
 async def notify(req: Request) -> Response:  # pylint: disable=unused-argument
@@ -86,16 +85,18 @@ async def notify(req: Request) -> Response:  # pylint: disable=unused-argument
 # This uses the shared Dictionary that the Bot adds conversation references to.
 async def _send_proactive_message():
     for conversation_reference in CONVERSATION_REFERENCES.values():
+        print(conversation_reference)
         await ADAPTER.continue_conversation(
             conversation_reference,
             lambda turn_context: turn_context.send_activity("proactive hello"),
-            APP_ID,
+            CONFIG.APP_ID,
         )
 
 
 APP = web.Application(middlewares=[aiohttp_error_middleware])
 APP.router.add_post("/api/messages", messages)
 APP.router.add_get("/api/notify", notify)
+
 
 if __name__ == "__main__":
     try:

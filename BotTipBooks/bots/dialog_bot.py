@@ -6,8 +6,8 @@ from botbuilder.dialogs import Dialog
 from helpers.dialog_helper import DialogHelper
 import os
 import json
-from typing import List
-from botbuilder.schema import Attachment, ChannelAccount, ConversationReference
+from typing import List, Dict
+from botbuilder.schema import Attachment, ChannelAccount, ConversationReference, Activity
 from bean import User
 from botbuilder.dialogs.dialog_set import DialogSet
 
@@ -65,8 +65,9 @@ class DialogBot(ActivityHandler):
         return Attachment(
             content_type="application/vnd.microsoft.card.adaptive", content=card
         )
+
     
-     def _add_conversation_reference(self, activity: Activity):
+    def _add_conversation_reference(self, activity: Activity):
         """
         This populates the shared Dictionary that holds conversation references. In this sample,
         this dictionary is used to send a message to members when /api/notify is hit.
