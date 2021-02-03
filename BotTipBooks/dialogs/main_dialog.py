@@ -114,6 +114,11 @@ class MainDialog(ComponentDialog):
                 selezionare tre categorie di interesse per effettuare la registrazione'''))
                 return await step_context.begin_dialog(self.registration_dialog_id) #se non è registrato
             else:
+                messages = DatabaseManager.search_messages_user(iduser)
+                if len(messages)>0:
+                    message_text = "Dal tuo ultimo accesso ci sono novità sui tuoi libri nella wishlist.\n"
+                    for message in messages:
+                        message_text+=message+"\n"
                 return await step_context.next([])
         else:
             await step_context.context.send_activity("Login was not successful please try again.")

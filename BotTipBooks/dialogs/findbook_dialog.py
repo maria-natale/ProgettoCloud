@@ -93,9 +93,10 @@ class FindBookDialog(CancelAndHelpDialog):
                 '''.format(results["positive"], results["neutral"], results["negative"], mean, strMax))
                 message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
                 await step_context.context.send_activity(message)
-            message_text = ('''Errore durante l'analisi delle recensioni''')
-            message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
-            await step_context.context.send_activity(message)
+            else:
+                message_text = ('''Errore durante l'analisi delle recensioni''')
+                message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+                await step_context.context.send_activity(message)
         return await step_context.next([])
 
 
