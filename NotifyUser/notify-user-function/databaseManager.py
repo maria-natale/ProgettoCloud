@@ -1,7 +1,8 @@
 import pyodbc
-from bean import User
-from bean import BookInfo
-from bean import Book, Category
+from user import User
+from book import BookInfo
+from book import Book
+from category import Category
 from typing import List
 
 server = 'servercc.database.windows.net'
@@ -43,6 +44,18 @@ class DatabaseManager:
                 conn.commit()
                 return True
         return False
+    
+
+    @staticmethod
+    def update_wishlist(iduser:str, book:BookInfo):
+        with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
+            with conn.cursor() as cursor:
+                try:
+                    cursor.execute('''UPDATE wishlist SET prezzo =?, disponibilita=? where utente=? and 
+                    titoloLibro=? and autoreLibro=?''', book.price, book.availability, iduser, book.name, book.author)
+                except pyodbc.IntegrityError:
+                    return False
+        return True
 
 
     @staticmethod
