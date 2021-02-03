@@ -105,7 +105,7 @@ class SuggestBooksDialog(CancelAndHelpDialog):
     @staticmethod
     def call_amazon(code: str):
         params = {
-            'api_key': '78ECAD39F78C435C8D50238C0406637B',
+            'api_key': 'A2E5C7D9C233454FAE27F2A0911C42A8',
             'type': 'bestsellers',
             'url': 'https://www.amazon.it/gp/bestsellers/books/'+ code,
             'page': '1'

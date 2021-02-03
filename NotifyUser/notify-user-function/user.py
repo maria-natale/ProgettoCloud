@@ -1,5 +1,5 @@
 from typing import List
-from book import BookInfo
+from .book import BookInfo
 
 
 class User:

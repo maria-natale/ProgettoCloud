@@ -1,7 +1,8 @@
 import datetime
 import logging
 from .databaseManager import DatabaseManager
-#from book import BookInfo
+from .book import BookInfo
+from .user import User
 #rom databaseManager import DatabaseManager
 import azure.functions as func
 import requests
