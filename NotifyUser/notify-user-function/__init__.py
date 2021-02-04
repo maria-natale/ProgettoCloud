@@ -1,15 +1,8 @@
 import datetime
 import logging
-<<<<<<< HEAD
-from user import User
-from book import BookInfo
-from databaseManager import DatabaseManager
-=======
 from .databaseManager import DatabaseManager
 from .book import BookInfo
 from .user import User
-#rom databaseManager import DatabaseManager
->>>>>>> 9b3f3bbe27e93ee8599583e83a96767d6784b200
 import azure.functions as func
 import requests
 
@@ -54,12 +47,12 @@ def add_messages(user: User):
                 DatabaseManager.add_message(user.idUser, messagePrice)
             if messageAvailabilty is not None:
                 DatabaseManager.add_message(user.idUser, messageAvailabilty)
-            logging.info(DatabaseManager.update_wishlist(user.idUser, new_book))
+            DatabaseManager.update_wishlist(user.idUser, new_book)
         
 
 
 def find_book(title: str, who: str):
-    r= requests.get("https://find-book-function.azurewebsites.net/api/FindBooksScraper?name={}&who={}".format(title, who))      
+    r= requests.get("https://bookscraping.azurewebsites.net/api/find-book?name={}&who={}".format(title, who))      
     string_result=r.text.split("\n")
     book=BookInfo()
     print(string_result)

@@ -17,11 +17,7 @@ class DatabaseManager:
         register=False
         with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
             with conn.cursor() as cursor:
-<<<<<<< HEAD
-                cursor.execute("SELECT TOP 1 id FROM Utenti WHERE id=?",iduser)
-=======
                 cursor.execute("SELECT TOP 1 id FROM Utenti where id=?", iduser)
->>>>>>> 9b3f3bbe27e93ee8599583e83a96767d6784b200
                 row = cursor.fetchone()
                 while row:
                     register=True
@@ -46,7 +42,7 @@ class DatabaseManager:
                         return False
                 conn.commit()
                 return True
-        return False
+        return True
 
 
     @staticmethod
@@ -134,8 +130,7 @@ class DatabaseManager:
                     conn.commit()
                 except pyodbc.IntegrityError:
                     return book
-            return book
-        return None
+        return book
         
     
     @staticmethod
@@ -161,6 +156,25 @@ class DatabaseManager:
                 except pyodbc.IntegrityError:
                     return False
         return True
+    
+
+    @staticmethod
+    def search_messages_user(idUser:str):
+        messages=[]
+        with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT ALL messaggio from Messaggi where utente=?", idUser)
+                row = cursor.fetchone()
+                while row:
+                    messages.append(str(row[0]))
+                    row = cursor.fetchone() 
+                try:
+                    cursor.execute("Delete from Messaggi where utente=?", idUser)
+                    conn.commit()
+                except pyodbc.IntegrityError:
+                    return []
+        return messages
+
     
 
     @staticmethod

@@ -1,13 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from botbuilder.dialogs import (
-    ComponentDialog,
-    WaterfallDialog,
-    WaterfallStepContext,
-    DialogTurnResult,
-    DialogContext
-)
+from botbuilder.dialogs import ComponentDialog, DialogContext, DialogTurnResult, DialogTurnStatus, WaterfallDialog, WaterfallStepContext
 from botbuilder.schema import (
     ChannelAccount,
     HeroCard,
@@ -101,6 +95,8 @@ class MainDialog(ComponentDialog):
         
 
     async def prompt_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        welcome_card = self.create_welcome_card()
+        await step_context.context.send_activity(welcome_card)
         return await step_context.begin_dialog(OAuthPrompt.__name__)
 
     async def login_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
@@ -119,6 +115,8 @@ class MainDialog(ComponentDialog):
                     message_text = "Dal tuo ultimo accesso ci sono novità sui tuoi libri nella wishlist.\n"
                     for message in messages:
                         message_text+=message+"\n"
+                    message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+                    await step_context.context.send_activity(message)
                 return await step_context.next([])
         else:
             await step_context.context.send_activity("Login was not successful please try again.")
@@ -126,7 +124,6 @@ class MainDialog(ComponentDialog):
     
 
     async def continue_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        await step_context.context.send_activity("Sei loggato")
         return await step_context.begin_dialog("WFDialog")
         
 
@@ -143,7 +140,7 @@ class MainDialog(ComponentDialog):
             return await step_context.next(None)
 
         card = HeroCard(
-        text ="Ciao, come posso aiutarti? ",
+        text ="Ciao, come posso aiutarti? Per uscire digita quit o esci.",
         buttons = [
             CardAction(
                 type=ActionTypes.im_back,
@@ -187,6 +184,9 @@ class MainDialog(ComponentDialog):
         intent = await LuisHelper.execute_luis_query(self._luis_recognizer,step_context.context)
         print('Intent is: '+str(intent))
 
+        if option=="quit" or option=="esci":
+            await step_context.context.send_activity("Cancelling")
+            return await step_context.cancel_all_dialogs() 
         if option=="info" or intent==Intent.INFO.value:
             info_card = self.create_adaptive_card_attachment()
             resp = MessageFactory.attachment(info_card)
@@ -204,12 +204,9 @@ class MainDialog(ComponentDialog):
             await bot_adapter.sign_out_user(step_context.context, self.connection_name)
             await step_context.context.send_activity("Sei stato disconnesso.")
             return await step_context.cancel_all_dialogs()
-        if option=="quit" or option=="esci":
-            return await step_context.cancel_all_dialogs() 
-
         
 
-    
+        
     async def final_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         if not self.skip:
             message_text = "Posso fare qualcos'altro per te?"
@@ -236,9 +233,18 @@ class MainDialog(ComponentDialog):
         print('Path:' +path)
         with open(path) as in_file:
             card = json.load(in_file)
-        
-
         return CardFactory.adaptive_card(card)
+
+
+    def create_welcome_card(self):
+        title = "Benvenuto in BotTipBooks"
+        subtitle = "Per iniziare ad utilizzare il bot effettuare il login oppure utilizzare il menu"
+        image = CardImage(url="https://www.lineaedp.it/files/2017/01/bot.jpg")
+        card = HeroCard(title=title, subtitle=subtitle, images=[image])
+        activity = MessageFactory.attachment(CardFactory.hero_card(card))
+        return activity
+    
+
 
 
 

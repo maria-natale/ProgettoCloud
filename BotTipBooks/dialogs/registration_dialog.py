@@ -28,7 +28,9 @@ class RegistrationDialog(CancelAndHelpDialog):
         super(RegistrationDialog, self).__init__(dialog_id or RegistrationDialog.__name__)
 
         self.CATEGORIES=DatabaseManager.find_categories()
-        self.CATEGORIES=self.CATEGORIES[:len(self.CATEGORIES)-1]
+        for cat in self.CATEGORIES:
+            if cat.name == "Genere sconosciuto":
+                self.CATEGORIES.remove(cat)
         self.selected=[]
         self.add_dialog(TextPrompt(TextPrompt.__name__))
         self.add_dialog(
@@ -82,11 +84,14 @@ class RegistrationDialog(CancelAndHelpDialog):
     async def loop_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         if len(self.selected)<3:
             return await step_context.replace_dialog("WFDialog")
+            for c in self.selected:
+                print(c.name)
         else:
             iduser=step_context.context.activity.from_property.id
             DatabaseManager.add_user(iduser, self.selected)
             self.CATEGORIES=DatabaseManager.find_categories()
             self.CATEGORIES=self.CATEGORIES[:len(self.CATEGORIES)-1]
+            self.selected=[]
             message_text = ("Sei registrato.")
             message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
             await step_context.context.send_activity(message)

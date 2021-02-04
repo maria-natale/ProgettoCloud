@@ -8,7 +8,7 @@ from pyadaptivecards.container import ColumnSet
 from pyadaptivecards.components import Column, TextBlock
 from bean import BookInfo
 from pyadaptivecards.options import Colors, FontWeight, HorizontalAlignment, Spacing
-from botbuilder.schema import InputHints
+from botbuilder.schema import HeroCard, InputHints
 from bot_recognizer import BotRecognizer
 from helpers.luis_helper import Intent, LuisHelper
 from botbuilder.dialogs.prompts import PromptValidatorContext
@@ -45,7 +45,7 @@ class WishlistDialog(CancelAndHelpDialog):
         user=DatabaseManager.find_user_info(step_context.context.activity.from_property.id)
         self.user=user
         card, flag=self.create_wishlist_card(user.wishlist)
-        await step_context.context.send_activity(MessageFactory.attachment(card))
+        await step_context.context.send_activity(card)
         if flag:
             message_text="Puoi cancellare un libro dalla tua wishlist oppure tornare al menu principale. Cosa desideri fare?"
             prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
@@ -129,14 +129,46 @@ class WishlistDialog(CancelAndHelpDialog):
             
 
     async def final_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        card=self.create_wishlist_card(self.user.wishlist)
-        await step_context.context.send_activity(MessageFactory.attachment(card))
+        card, res=self.create_wishlist_card(self.user.wishlist)
+        await step_context.context.send_activity(card)
         return await step_context.end_dialog()
 
                 
 
     def create_wishlist_card(self, books: List):
-        firstcolumnSet = ColumnSet([Column([TextBlock("La tua wishlist", color=Colors(7), weight=FontWeight(3),
+        card=HeroCard(title="La tua wishlist")
+        attachments = []
+        attachments.append(CardFactory.hero_card(card))
+        text=""
+        flag=False
+        for book in books:
+            flag=True
+            if book.author is not None:
+                text+="{} di {}\n\n".format(book.name, book.author)
+            else:
+                text+="{}\n\n".format(book.name)
+            text+="Genere: {}\n".format(book.genre)
+            text+="Nome del sito: {} \n".format(book.site)
+            if book.price is not None:
+                text+="Prezzo: {}€ \n".format(book.price)
+            else: 
+                text+="Prezzo non disponibile.\n"
+            text+="Disponibilità: {} \n".format(book.availability)
+            text+="Link per l'acquisto: {} \n".format(book.link)
+            attachments.append(CardFactory.hero_card(HeroCard(text=text)))
+            text=""
+
+        if flag:
+            activity = MessageFactory.carousel(attachments) 
+            return (activity, True)
+        else:
+            new_card = CardFactory.hero_card(title ="La tua wishlist è vuota", subtitle= '''Non puoi eseguire nessuna operazione.
+                Puoi cercare un libro ed aggiungerlo. Ti riporto al menù principale. ''')
+            attachments.append(CardFactory.hero_card(new_card))
+            activity = MessageFactory.carousel(attachments) 
+            return (activity, False)
+        
+        """firstcolumnSet = ColumnSet([Column([TextBlock("La tua wishlist", color=Colors(7), weight=FontWeight(3),
             horizontalAlignment=HorizontalAlignment(2), wrap=True)])])
         items=[]
         columnsSet=[]
@@ -166,7 +198,7 @@ class WishlistDialog(CancelAndHelpDialog):
             columnSet = ColumnSet([Column([TextBlock('''Non puoi eseguire nessuna operazione.
                 Puoi cercare un libro ed aggiungerlo. Ti riporto al menù principale.''',wrap=True)])])
             card = AdaptiveCard(body=[firstcolumnSet, columnSet])
-            return (CardFactory.adaptive_card(card.to_dict()), False)
+            return (CardFactory.adaptive_card(card.to_dict()), False)"""
 
     
     def set_recognizer(self, luis_recognizer: BotRecognizer):

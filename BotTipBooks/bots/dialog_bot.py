@@ -1,13 +1,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-from botbuilder.core import ActivityHandler, ConversationState, UserState, TurnContext
-from botbuilder.dialogs import Dialog
+from botbuilder.core import ActivityHandler, CardFactory, ConversationState, MessageFactory, TurnContext, UserState
+from botbuilder.dialogs import Dialog, DialogTurnResult, DialogTurnStatus
 from helpers.dialog_helper import DialogHelper
 import os
 import json
 from typing import List, Dict
-from botbuilder.schema import Attachment, ChannelAccount, Activity
+from botbuilder.schema import Activity, ActivityTypes, Attachment, CardImage, ChannelAccount, HeroCard, InputHints
 from bean import User
 from botbuilder.dialogs.dialog_set import DialogSet
 
@@ -32,9 +32,9 @@ class DialogBot(ActivityHandler):
     async def on_members_added_activity(self, members_added: List[ChannelAccount], turn_context: TurnContext):
         for member in members_added:
             if member.id != turn_context.activity.recipient.id:
-                #welcome_card = self.create_adaptive_card_attachment()
-                #response = MessageFactory.attachment(welcome_card)
-                #await turn_context.send_activity(response)
+                print("chiamo welcome")
+                
+                print("fatto")
                 await DialogHelper.run_dialog(self.dialog,turn_context, self.conversation_state.create_property("DialogState"))
 
 
@@ -52,13 +52,7 @@ class DialogBot(ActivityHandler):
             self.conversation_state.create_property("DialogState"),
         )
     
-    # Load attachment from file.
-    def create_adaptive_card_attachment(self):
-        relative_path = os.path.abspath(os.path.dirname(__file__))
-        path = os.path.join(relative_path, "../cards/welcomeCard.json")
-        with open(path) as in_file:
-            card = json.load(in_file)
+    
+    
 
-        return Attachment(
-            content_type="application/vnd.microsoft.card.adaptive", content=card
-        )
+    

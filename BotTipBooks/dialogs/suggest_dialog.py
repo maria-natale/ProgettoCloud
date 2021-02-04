@@ -12,7 +12,7 @@ from pyadaptivecards.options import BlockElementHeight, Colors, FontWeight, Hori
 from pyadaptivecards.card import AdaptiveCard
 from pyadaptivecards.actions import OpenUrl
 from botbuilder.dialogs.prompts import PromptValidatorContext
-from botbuilder.schema import InputHints
+from botbuilder.schema import HeroCard, InputHints
 
 cat_and_code = {"Adolescenti e ragazzi": "13077484031",
     "Arte cinema e fotografia": "13077485031",
@@ -50,7 +50,7 @@ class SuggestBooksDialog(CancelAndHelpDialog):
         iduser=step_context.context.activity.from_property.id
         SuggestBooksDialog.find_suggests(iduser)
         card=SuggestBooksDialog.create_card()
-        await step_context.context.send_activity(MessageFactory.attachment(card))
+        await step_context.context.send_activity(card)
         message_text="Vuoi aggiungere un libro alla tua wishlist?"
         prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
         return await step_context.prompt(
@@ -137,7 +137,24 @@ class SuggestBooksDialog(CancelAndHelpDialog):
 
     @staticmethod
     def create_card():
-        firstcolumnSet = ColumnSet([Column([TextBlock("Ecco i miei suggerimenti per te", color=Colors(4),
+        card=HeroCard(title="Ecco i miei suggerimenti per te")
+        attachments = []
+        attachments.append(CardFactory.hero_card(card))
+        text=""
+        for book in list_of_books:
+            text+="Titolo: {}\n".format(book.name)
+            text+="Nome del sito: Amazon"
+            if book.price is not None:
+                text+="Prezzo: {}€ \n".format(book.price)
+            else: 
+                text+="Prezzo non disponibile.\n"
+            text+="Link per l'acquisto: {} \n".format(book.link)
+            attachments.append(CardFactory.hero_card(HeroCard(text=text)))
+            text=""
+
+        activity = MessageFactory.carousel(attachments) 
+        return activity
+        """firstcolumnSet = ColumnSet([Column([TextBlock("Ecco i miei suggerimenti per te", color=Colors(4),
         weight=FontWeight(3), horizontalAlignment=HorizontalAlignment(2), wrap=True)])])
         items=[]
         columnsSet=[]
@@ -156,7 +173,7 @@ class SuggestBooksDialog(CancelAndHelpDialog):
 
         card = AdaptiveCard(body=[firstcolumnSet]+columnsSet)
 
-        return CardFactory.adaptive_card(card.to_dict())
+        return CardFactory.adaptive_card(card.to_dict())"""
     
 
     @staticmethod

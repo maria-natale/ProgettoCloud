@@ -1,6 +1,6 @@
 from botbuilder.dialogs import (ComponentDialog, DialogContext, DialogTurnResult, DialogTurnStatus, TextPrompt, 
     WaterfallDialog, WaterfallStepContext)
-from botbuilder.schema import ActivityTypes, InputHints
+from botbuilder.schema import ActivityTypes, HeroCard, InputHints
 from botbuilder.core import MessageFactory
 from .cancel_and_help_dialog import CancelAndHelpDialog
 from botbuilder.dialogs.prompts.prompt_options import PromptOptions
@@ -60,7 +60,8 @@ class FindBookDialog(CancelAndHelpDialog):
     async def search_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         book_name=step_context.result
         card= self.find_book(book_name)
-        await step_context.context.send_activity(MessageFactory.attachment(card))
+        #await step_context.context.send_activity(MessageFactory.attachment(card))
+        await step_context.context.send_activity(card)
 
         message_text = "Vuoi conoscere le recensioni sul libro?"
         prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
@@ -80,19 +81,23 @@ class FindBookDialog(CancelAndHelpDialog):
                     break
             if link is not None:
                 results, mean = FindBookDialog.get_reviews(link)
-                max=results["positive"]
-                strMax = "Ti consiglio fortemente l'acquisto."
-                if results["negative"] > max:
-                    max = results["negative"]
-                    strMax = "Non te lo consiglio affatto."
-                elif results["neutral"] > max:
-                    max = results["neutral"]
-                    strMax = "Ti consiglio di dargli un'occhiata."
-                message_text = ('''Ho analizzato le recensioni.\nI lettori hanno espresso {} opinioni positive,
-                {} opinioni neutrali e {} opinioni negative.\nLa media del valore delle recensioni è {} stelle.\n{}
-                '''.format(results["positive"], results["neutral"], results["negative"], mean, strMax))
-                message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
-                await step_context.context.send_activity(message)
+                if results is not None:
+                    max=results["positive"]
+                    strMax = "Ti consiglio fortemente l'acquisto."
+                    if results["negative"] > max:
+                        max = results["negative"]
+                        if mean<3:
+                            strMax = "Non te lo consiglio affatto."
+                        else:
+                            strMax = "Ti consiglio di dargli un'occhiata."
+                    elif results["neutral"] > max:
+                        max = results["neutral"]
+                        strMax = "Ti consiglio di dargli un'occhiata."
+                    sum=results["positive"]+results["negative"]+results["neutral"]
+                    message_text = ('''Ho analizzato le ultime {} recensioni.\nI lettori hanno espresso {} opinioni positive, {} opinioni neutrali e {} opinioni negative.\nLa media del valore delle recensioni è {} stelle.\n{}
+                    '''.format(sum, results["positive"], results["neutral"], results["negative"], mean, strMax))
+                    message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+                    await step_context.context.send_activity(message)
             else:
                 message_text = ('''Errore durante l'analisi delle recensioni''')
                 message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
@@ -170,7 +175,26 @@ class FindBookDialog(CancelAndHelpDialog):
                 genre=book.genre
                 break
         
-        try:
+        subtitle="{} di {} \nGenere: {}".format(title, author, genre)
+        card=HeroCard(title="RISULTATI", subtitle=subtitle)
+        attachments = []
+        attachments.append(CardFactory.hero_card(card))
+        text=""
+        for book in self.books:
+            text+="Nome del sito: {} \n".format(book.site)
+            if book.price is not None:
+                text+="Prezzo: {}€ \n".format(book.price)
+            else: 
+                text+="Prezzo non disponibile.\n"
+            text+="Disponibilità: {} \n".format(book.availability)
+            text+="Link per l'acquisto: {} \n".format(book.link)
+            attachments.append(CardFactory.hero_card(HeroCard(text=text)))
+            text=""
+
+        activity = MessageFactory.carousel(attachments) 
+        return activity
+
+        """try:
             firstcolumnSet = ColumnSet([Column([TextBlock("RISULTATI", color=Colors(7), weight=FontWeight(3), horizontalAlignment=HorizontalAlignment(2), wrap=True)])])
             items=[]
             items.append(TextBlock("{} di {} ".format(title, author), weight=FontWeight(3), color=Colors(2), wrap=True, isSubtle=True))
@@ -193,7 +217,7 @@ class FindBookDialog(CancelAndHelpDialog):
         except UnboundLocalError:
             message="Si è vericato un errore durante la ricerca del libro."
             firstcolumnSet = ColumnSet([Column([TextBlock(message, weight=FontWeight(3), wrap=True)])])
-            card = AdaptiveCard(body=[firstcolumnSet])
+            card = AdaptiveCard(body=[firstcolumnSet])"""
             
 
 
@@ -235,7 +259,7 @@ class FindBookDialog(CancelAndHelpDialog):
     async def validateName(prompt_context: PromptValidatorContext) -> bool:
         return (
             prompt_context.recognized.succeeded
-            and 5 <= len(prompt_context.recognized.value) <= 30
+            and 3 <= len(prompt_context.recognized.value) <= 30
         )
     
     @staticmethod
@@ -284,7 +308,10 @@ class FindBookDialog(CancelAndHelpDialog):
             mean=0
         
         text_analyzer=TextAnalyzer()
-        results = text_analyzer.sentiment_analysis(list_of_body)
+        if len(list_of_body)>0:
+            results = text_analyzer.sentiment_analysis(list_of_body)
+        else:
+            results = None
         
         return (results, mean)
 
