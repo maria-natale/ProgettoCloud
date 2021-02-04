@@ -1,8 +1,8 @@
 import pyodbc
-from user import User
-from book import BookInfo
-from book import Book
-from category import Category
+from .user import User
+from .book import BookInfo
+from .book import Book
+from .category import Category
 from typing import List
 
 server = 'servercc.database.windows.net'

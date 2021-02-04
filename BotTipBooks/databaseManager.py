@@ -17,7 +17,11 @@ class DatabaseManager:
         register=False
         with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
             with conn.cursor() as cursor:
+<<<<<<< HEAD
                 cursor.execute("SELECT TOP 1 id FROM Utenti WHERE id=?",iduser)
+=======
+                cursor.execute("SELECT TOP 1 id FROM Utenti where id=?", iduser)
+>>>>>>> 9b3f3bbe27e93ee8599583e83a96767d6784b200
                 row = cursor.fetchone()
                 while row:
                     register=True

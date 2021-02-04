@@ -18,9 +18,9 @@ class TextAnalyzer:
 
     def sentiment_analysis(self, list: List):
         results=[]
-        for element in list:
-            response = self.client.analyze_sentiment(documents=element)
-            results.append(results.sentiment)
+        response = self.client.analyze_sentiment(documents=list)
+        for result in response:
+            results.append(result.sentiment)
         
         n_positive=0
         n_negative=0
