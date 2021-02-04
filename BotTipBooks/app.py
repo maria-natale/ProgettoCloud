@@ -23,16 +23,12 @@ from botbuilder.schema import Activity, ActivityTypes, ConversationReference
 
 from config import DefaultConfig
 from dialogs import MainDialog, FindBookDialog
-from typing import Dict
 from adapter_with_error_handler import AdapterWithErrorHandler
 from bot_recognizer import BotRecognizer
 from pip._internal import req
 from botbuilder.core.bot_framework_adapter import BotFrameworkAdapter
 from bots import DialogBot
-import schedule
-from threading import Timer
-from concurrent.futures import thread
-import time
+
 
 CONFIG = DefaultConfig()
 

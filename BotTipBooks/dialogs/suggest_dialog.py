@@ -105,7 +105,7 @@ class SuggestBooksDialog(CancelAndHelpDialog):
     @staticmethod
     def call_amazon(code: str):
         params = {
-            'api_key': '78ECAD39F78C435C8D50238C0406637B',
+            'api_key': 'A2E5C7D9C233454FAE27F2A0911C42A8',
             'type': 'bestsellers',
             'url': 'https://www.amazon.it/gp/bestsellers/books/'+ code,
             'page': '1'
@@ -183,7 +183,7 @@ class SuggestBooksDialog(CancelAndHelpDialog):
 
 
     def find_book(self, title: str):
-        r= requests.get("https://find-book-function.azurewebsites.net/api/FindBooksScraper?name={}&who=amazon".format(title))      
+        r= requests.get("https://bookscraping.azurewebsites.net/api/find-book?name={}&who=amazon".format(title))      
         string_result=r.text.split("\n")
         book=BookInfo()
         print(string_result)

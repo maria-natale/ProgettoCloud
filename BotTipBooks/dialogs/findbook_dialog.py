@@ -197,7 +197,7 @@ class FindBookDialog(CancelAndHelpDialog):
 
 
     def find_book(self, title: str):
-        r= requests.get("https://find-book-function.azurewebsites.net/api/FindBooksScraper?name={}&who=all".format(title))      
+        r= requests.get("https://bookscraping.azurewebsites.net/api/find-book?name={}&who=all".format(title))      
         string_result=r.text.split("\n")
         book=BookInfo()
         print(string_result)
@@ -256,7 +256,7 @@ class FindBookDialog(CancelAndHelpDialog):
     def get_reviews(link: str):
         asin = link[link.rindex('/') + 1:]
         params = {
-            'api_key': '78ECAD39F78C435C8D50238C0406637B',
+            'api_key': 'A2E5C7D9C233454FAE27F2A0911C42A8',
             'type': 'reviews',
             'amazon_domain': 'amazon.it',
             'asin': asin
