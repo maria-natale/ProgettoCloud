@@ -26,14 +26,13 @@ from text_analyzer import TextAnalyzer
 class FindBookDialog(CancelAndHelpDialog):
     def __init__(self, dialog_id: str = None):
         super(FindBookDialog, self).__init__(dialog_id or FindBookDialog.__name__)
-
         self.add_dialog(TextPrompt("TextPromptLibro", FindBookDialog.validateName))
         self.add_dialog(TextPrompt("TextPromptSito", FindBookDialog.validateSite))
         self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__, FindBookDialog.yes_noValidator))
         self.add_dialog(
             WaterfallDialog(
                 "WFDialog", [self.prompt_step, 
-                self.search_step, 
+                self.search_step,
                 self.confirmRec_step,
                 self.prompt_to_wish,
                 self.confirm_step, 
@@ -43,10 +42,13 @@ class FindBookDialog(CancelAndHelpDialog):
 
         self.initial_dialog_id = "WFDialog"
         self.books=[]
+        self.amazonLink = None
+
 
     async def prompt_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         message_text = "Quale libro vuoi cercare?"
         self.books=[]
+        self.amazonLink = None
         prompt_message = MessageFactory.text(
             message_text, message_text, InputHints.expecting_input
         )
@@ -55,32 +57,34 @@ class FindBookDialog(CancelAndHelpDialog):
             retry_prompt=MessageFactory.text('''Quale libro vuoi cercare? Il nome del libro deve avere lunghezza
             compresa tra 5 e 30'''))
         )
-        
     
+
     async def search_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         book_name=step_context.result
-        card= self.find_book(book_name)
-        #await step_context.context.send_activity(MessageFactory.attachment(card))
+        card= self.find_book(book_name) 
         await step_context.context.send_activity(card)
 
-        message_text = "Vuoi conoscere le recensioni sul libro?"
-        prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
-        return await step_context.prompt(
-            ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message,
-                retry_prompt=MessageFactory.text('''Vuoi conoscere le recensioni sul libro? Scrivi yes o no'''))
-            )
+        if len(self.books)>0 and self.amazonLink is not None:
+            message_text = "Vuoi conoscere le recensioni sul libro?"
+            prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
+            return await step_context.prompt(
+                ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message,
+                    retry_prompt=MessageFactory.text('''Vuoi conoscere le recensioni sul libro? Scrivi yes o no'''))
+                )
+        return await step_context.end_dialog()
+
 
 
     async def confirmRec_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         result=step_context.result
         link=None
         if result:
-            for book  in self.books:
+            """for book  in self.books:
                 if book.site.lower()=="amazon":
                     link=book.link
-                    break
-            if link is not None:
-                results, mean = FindBookDialog.get_reviews(link)
+                    break"""
+            if self.amazonLink is not None:
+                results, mean = FindBookDialog.get_reviews(self.amazonLink)
                 if results is not None:
                     max=results["positive"]
                     strMax = "Ti consiglio fortemente l'acquisto."
@@ -110,8 +114,7 @@ class FindBookDialog(CancelAndHelpDialog):
         prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
         return await step_context.prompt(
             ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message,
-                retry_prompt=MessageFactory.text('''Desideri aggiungere il libro alla tua wishlist? 
-                Scrivi yes o no'''))
+                retry_prompt=MessageFactory.text('''Desideri aggiungere il libro alla tua wishlist? Scrivi yes o no'''))
             )
 
 
@@ -122,8 +125,7 @@ class FindBookDialog(CancelAndHelpDialog):
             prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
             return await step_context.prompt(
                 "TextPromptSito", PromptOptions(prompt=prompt_message,
-                retry_prompt=MessageFactory.text('''Su quale sito desideri acquistare il libro? Inserisci
-                un sito valido''')),
+                retry_prompt=MessageFactory.text('''Su quale sito desideri acquistare il libro? Inserisci un sito valido''')),
             )
         return await step_context.end_dialog()
 
@@ -162,6 +164,9 @@ class FindBookDialog(CancelAndHelpDialog):
     
 
     def create_result_card(self):
+        title = None
+        author = None
+        genre = None
         for book in self.books:
             if book.name is not None:
                 title=book.name
@@ -175,57 +180,35 @@ class FindBookDialog(CancelAndHelpDialog):
                 genre=book.genre
                 break
         
-        subtitle="{} di {} \nGenere: {}".format(title, author, genre)
-        card=HeroCard(title="RISULTATI", subtitle=subtitle)
         attachments = []
-        attachments.append(CardFactory.hero_card(card))
-        text=""
-        for book in self.books:
-            text+="Nome del sito: {} \n".format(book.site)
-            if book.price is not None:
-                text+="Prezzo: {}€ \n".format(book.price)
-            else: 
-                text+="Prezzo non disponibile.\n"
-            text+="Disponibilità: {} \n".format(book.availability)
-            text+="Link per l'acquisto: {} \n".format(book.link)
-            attachments.append(CardFactory.hero_card(HeroCard(text=text)))
+        if title is not None and author is not None and genre is not None:
+            subtitle="{} di {} \nGenere: {}".format(title, author, genre)
+            card=HeroCard(title="RISULTATI", subtitle=subtitle)
+            attachments.append(CardFactory.hero_card(card))
             text=""
-
-        activity = MessageFactory.carousel(attachments) 
-        return activity
-
-        """try:
-            firstcolumnSet = ColumnSet([Column([TextBlock("RISULTATI", color=Colors(7), weight=FontWeight(3), horizontalAlignment=HorizontalAlignment(2), wrap=True)])])
-            items=[]
-            items.append(TextBlock("{} di {} ".format(title, author), weight=FontWeight(3), color=Colors(2), wrap=True, isSubtle=True))
-            items.append(TextBlock("Genere: {}".format(genre), weight=FontWeight(3), color=Colors(2), wrap=True, isSubtle=True))
-            columnsSet=[]
-     
             for book in self.books:
-                items.append(TextBlock("Nome del sito: {} ".format(book.site), spacing=Spacing(3), wrap=True)) 
+                text+="Nome del sito: {} \n".format(book.site)
                 if book.price is not None:
-                    items.append(TextBlock("Prezzo: {}€ ".format(book.price), spacing=Spacing(3), wrap=True))
+                    text+="Prezzo: {}€ \n".format(book.price)
                 else: 
-                    items.append(TextBlock("Prezzo non disponibile", spacing=Spacing(3), wrap=True))
-                items.append(TextBlock("Disponibilità: {} ".format(book.availability), spacing=Spacing(3), wrap=True))
-                items.append(TextBlock("Link per l'acquisto: {} ".format(book.link), spacing=Spacing(3), wrap=True, color=Colors(5)))
-                columnsSet.append(ColumnSet([Column(items)], separator=True, spacing=Spacing(4)))
-                items=[]
-            card = AdaptiveCard(body=[firstcolumnSet]+columnsSet)
-
-            return CardFactory.adaptive_card(card.to_dict())
-        except UnboundLocalError:
-            message="Si è vericato un errore durante la ricerca del libro."
-            firstcolumnSet = ColumnSet([Column([TextBlock(message, weight=FontWeight(3), wrap=True)])])
-            card = AdaptiveCard(body=[firstcolumnSet])"""
-            
+                    text+="Prezzo non disponibile.\n"
+                text+="Disponibilità: {} \n".format(book.availability)
+                text+="Link per l'acquisto: {} \n".format(book.link)
+                attachments.append(CardFactory.hero_card(HeroCard(text=text)))
+                text=""
+        else:
+            text = "Errore durante la ricerca del libro"
+            attachments.append(CardFactory.hero_card(HeroCard(text=text)))
+        return MessageFactory.carousel(attachments)
+        
 
 
     def find_book(self, title: str):
         r= requests.get("https://bookscraping.azurewebsites.net/api/find-book?name={}&who=all".format(title))      
         string_result=r.text.split("\n")
+        self.amazonLink = string_result[0]
+        string_result = string_result[1:]
         book=BookInfo()
-        print(string_result)
         for i, s in enumerate(string_result):
             if i%7==0:
                 book=BookInfo()
@@ -250,9 +233,8 @@ class FindBookDialog(CancelAndHelpDialog):
             elif i%7==6:
                 book.link=s
                 self.books.append(book)
-        for book in self.books:
-            print(book.name)
         return self.create_result_card()
+        
         
 
     @staticmethod
@@ -273,7 +255,7 @@ class FindBookDialog(CancelAndHelpDialog):
     async def validateSite(prompt_context: PromptValidatorContext) -> bool:
         return (
             prompt_context.recognized.succeeded
-            and str(prompt_context.recognized.value).lower() in ["mondadori", "feltrinelli", "ibs", "amazon", "hoepli"]
+            and str(prompt_context.recognized.value).lower() in ["mondadori", "feltrinelli", "ibs", "hoepli"]
         )
     
 
@@ -284,7 +266,8 @@ class FindBookDialog(CancelAndHelpDialog):
             'api_key': 'A2E5C7D9C233454FAE27F2A0911C42A8',
             'type': 'reviews',
             'amazon_domain': 'amazon.it',
-            'asin': asin
+            'asin': asin,
+            'page': '2'
         }
 
         # make the http GET request to Rainforest API

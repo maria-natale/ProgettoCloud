@@ -99,17 +99,14 @@ class RegistrationDialog(CancelAndHelpDialog):
     
 
     def create_card(self):
-        firstcolumnSet = ColumnSet([Column([TextBlock("Scegli una categoria", weight=FontWeight(3), horizontalAlignment=HorizontalAlignment(2), wrap=True)])])
-        items=[]
-        columnsSet=[]
-     
+        title = "Scegli una categoria: \n\n"
+        text=""
         for c in self.CATEGORIES:
-            items.append(TextBlock("{} ".format(c.name), spacing=Spacing(3), wrap=True)) 
-            columnsSet.append(ColumnSet([Column(items)]))
-            items=[]
-        card = AdaptiveCard(body=[firstcolumnSet]+columnsSet)
+            text+="- "+c.name
+            text+="\n"
+        card = HeroCard(title =title, text=text)
 
-        return CardFactory.adaptive_card(card.to_dict())
+        return CardFactory.hero_card(card)
 
         
 

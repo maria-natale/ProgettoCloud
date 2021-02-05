@@ -28,8 +28,10 @@ from botbuilder.dialogs.dialog import Dialog
 from helpers.luis_helper import LuisHelper,Intent
 from .wishlist_dialog import WishlistDialog
 from .suggest_dialog import SuggestBooksDialog
+
 import os
 import json
+from typing import Dict
 
 registration_dialog=RegistrationDialog()
 findbook=FindBookDialog()
@@ -38,7 +40,7 @@ suggest_dialog=SuggestBooksDialog()
 
 class MainDialog(ComponentDialog):
     
-    def __init__(self, connection_name: str,  luis_recognizer: BotRecognizer):
+    def __init__(self, connection_name: str,  luis_recognizer: BotRecognizer, conversation_state):
         super(MainDialog, self).__init__(MainDialog.__name__)
         self.connection_name=connection_name
         
@@ -47,6 +49,7 @@ class MainDialog(ComponentDialog):
         self.registration_dialog_id=registration_dialog.id
         self.wishlist_dialog_id=wishlist_dialog.id
         self.suggest_dialog_id=suggest_dialog.id
+    
         wishlist_dialog.set_recognizer(luis_recognizer)
 
         self.add_dialog(
@@ -77,6 +80,7 @@ class MainDialog(ComponentDialog):
         self.add_dialog(registration_dialog)
         self.add_dialog(wishlist_dialog)
         self.add_dialog(suggest_dialog)
+        
 
         self.add_dialog(
             WaterfallDialog(
@@ -91,6 +95,8 @@ class MainDialog(ComponentDialog):
 
         self.initial_dialog_id = "WFDialogLogin"
         self.skip=False
+        self.conversation_state=conversation_state
+
         
         
 
@@ -98,6 +104,7 @@ class MainDialog(ComponentDialog):
         welcome_card = self.create_welcome_card()
         await step_context.context.send_activity(welcome_card)
         return await step_context.begin_dialog(OAuthPrompt.__name__)
+        
 
     async def login_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         if step_context.result:
@@ -228,12 +235,11 @@ class MainDialog(ComponentDialog):
     
 
     def create_adaptive_card_attachment(self):
-        relative_path = os.path.abspath(os.path.dirname(__file__))
-        path = os.path.join(relative_path, "../cards/info_card.json")
-        print('Path:' +path)
-        with open(path) as in_file:
-            card = json.load(in_file)
-        return CardFactory.adaptive_card(card)
+        title = "Ciao sono BotTipBooks"
+        subtitle = "Ecco cosa posso fare per te..."
+        text = '''Sono un bot dotato di intelligenza artificiale che ti permette di:\n\n- Ricercare libri e mostrarti i prezzi migliori sul mercato.\n- Creare una wishlist dove poter inserire tutti i libri che ti interessano.\n- Mantenere sott'occhio i libri della tua wishlist e avvisarti se cambiano di prezzo, o ritornano disponibili.\n- Posso offrirti suggerimenti su nuovi libri da leggere in base alle tue preferenze.\n- Posso guidarti all'acquisto di nuovi libri, confrontando le varie recensioni per un particolare libro che ti interessa.\n\nPuoi utilizzarmi come preferisci, puoi impartirmi comandi, oppure utilizzare i bottoni del menu'. Iniziamo? :)'''
+        card = CardFactory.hero_card(HeroCard(title=title, subtitle=subtitle, text=text))
+        return card
 
 
     def create_welcome_card(self):

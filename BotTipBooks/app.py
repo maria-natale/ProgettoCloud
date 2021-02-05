@@ -28,6 +28,7 @@ from bot_recognizer import BotRecognizer
 from pip._internal import req
 from botbuilder.core.bot_framework_adapter import BotFrameworkAdapter
 from bots import DialogBot
+from typing import Dict
 
 
 CONFIG = DefaultConfig()
@@ -49,7 +50,7 @@ ADAPTER = AdapterWithErrorHandler(SETTINGS, CONVERSATION_STATE)
 # Create dialogs and Bot
 RECOGNIZER = BotRecognizer(CONFIG)
 FINDBOOK_DIALOG = FindBookDialog()
-DIALOG = MainDialog(CONFIG.CONNECTION_NAME, RECOGNIZER)
+DIALOG = MainDialog(CONFIG.CONNECTION_NAME, RECOGNIZER, CONVERSATION_STATE)
 BOT = DialogBot(CONVERSATION_STATE, USER_STATE, DIALOG)
 
 

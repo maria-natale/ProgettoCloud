@@ -10,6 +10,8 @@ from typing import List, Dict
 from botbuilder.schema import Activity, ActivityTypes, Attachment, CardImage, ChannelAccount, HeroCard, InputHints
 from bean import User
 from botbuilder.dialogs.dialog_set import DialogSet
+import time
+
 
 
 class DialogBot(ActivityHandler):
@@ -22,6 +24,7 @@ class DialogBot(ActivityHandler):
             raise Exception("[DialogBot]: Missing parameter. dialog is required")
         
         self.conversation_state = conversation_state
+        self.dialog_state_property = conversation_state.create_property("DialogState")
         self.user_state = user_state
         self.dialog = dialog
     
@@ -29,18 +32,15 @@ class DialogBot(ActivityHandler):
     async def on_conversation_update_activity(self, turn_context: TurnContext):
         return await super().on_conversation_update_activity(turn_context)
 
+
     async def on_members_added_activity(self, members_added: List[ChannelAccount], turn_context: TurnContext):
         for member in members_added:
             if member.id != turn_context.activity.recipient.id:
-                print("chiamo welcome")
-                
-                print("fatto")
-                await DialogHelper.run_dialog(self.dialog,turn_context, self.conversation_state.create_property("DialogState"))
+                await DialogHelper.run_dialog(self.dialog,turn_context, self.dialog_state_property)
 
 
     async def on_turn(self, turn_context: TurnContext):
         await super().on_turn(turn_context)
-
         # Save any state changes that might have occurred during the turn.
         await self.conversation_state.save_changes(turn_context, False)
         await self.user_state.save_changes(turn_context, False)
@@ -49,9 +49,9 @@ class DialogBot(ActivityHandler):
         await DialogHelper.run_dialog(
             self.dialog,
             turn_context,
-            self.conversation_state.create_property("DialogState"),
+            self.dialog_state_property,
         )
-    
+
     
     
 

@@ -13,6 +13,7 @@ from pyadaptivecards.card import AdaptiveCard
 from pyadaptivecards.actions import OpenUrl
 from botbuilder.dialogs.prompts import PromptValidatorContext
 from botbuilder.schema import HeroCard, InputHints
+import random
 
 cat_and_code = {"Adolescenti e ragazzi": "13077484031",
     "Arte cinema e fotografia": "13077485031",
@@ -48,9 +49,17 @@ class SuggestBooksDialog(CancelAndHelpDialog):
     
     async def showBooks_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         iduser=step_context.context.activity.from_property.id
-        SuggestBooksDialog.find_suggests(iduser)
-        card=SuggestBooksDialog.create_card()
+        genres_user = []
+        user_with_info = DatabaseManager.find_user_info(iduser)
+        genres_user = user_with_info.categories
+        
+        index=random.randint(0,2)
+        category = genres_user[index]
+        code = cat_and_code[category.name]
+        books = SuggestBooksDialog.call_amazon(code)
+        card=SuggestBooksDialog.create_card(books, category.name)
         await step_context.context.send_activity(card)
+
         message_text="Vuoi aggiungere un libro alla tua wishlist?"
         prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
         return await step_context.prompt(
@@ -87,19 +96,7 @@ class SuggestBooksDialog(CancelAndHelpDialog):
                 message_text="Il libro {} non è stato aggiunto alla tua wishlist.".format(book_to_add.name)
                 await step_context.context.send_activity(MessageFactory.text(message_text))
         return await step_context.end_dialog()
-
-
-    @staticmethod
-    def find_suggests(iduser: str):
-        wishlist_of_user = []
-        genres_user = []
-
-        user_with_info = DatabaseManager.find_user_info(iduser)
-        genres_user = user_with_info.categories
-        for cat in genres_user:
-            category = cat.name
-            code = cat_and_code[category]
-            SuggestBooksDialog.call_amazon(code)
+        
     
 
     @staticmethod
@@ -116,34 +113,45 @@ class SuggestBooksDialog(CancelAndHelpDialog):
         jsonResult = json.loads(jsonStringResult)
         lista_bestseller = jsonResult['bestsellers']
         book = BookInfo()
+        booksTemp = []
+        books_cat = []
         for i, libro in enumerate(lista_bestseller):
-            if i < 3:
-                title = libro['title']
+            title = libro['title']
+            try:
                 price = libro['price']['value']
-                category = libro['current_category']['name']
-                image_link = libro['image']
-                link = libro['link']
-                book.name = title
-                book.price = price
-                book.genre = category
-                book.link = link
-                list_of_books.append(book)
-                books_images[title] = image_link
-                book=BookInfo()
-            else:
-                break
+            except KeyError:
+                price = None
+            category = libro['current_category']['name']
+            image_link = libro['image']
+            link = libro['link']
+            book.name = title
+            book.price = price
+            book.genre = category
+            book.link = link
+            booksTemp.append(book)
+            books_images[title] = image_link
+            book=BookInfo()
+
+        for i in range(3):
+            index = random.randint(0, len(booksTemp)-1)
+            book=booksTemp[index]
+            list_of_books.append(book)
+            books_cat.append(book)
+            booksTemp.remove(book)
+        return books_cat
+
         
 
-
+        
     @staticmethod
-    def create_card():
-        card=HeroCard(title="Ecco i miei suggerimenti per te")
+    def create_card(books, categoria):
+        card=HeroCard(title="Ecco i miei suggerimenti per te per la categoria: {}".format(categoria))
         attachments = []
         attachments.append(CardFactory.hero_card(card))
         text=""
-        for book in list_of_books:
+        for book in books:
             text+="Titolo: {}\n".format(book.name)
-            text+="Nome del sito: Amazon"
+            text+="Nome del sito: Amazon\n"
             if book.price is not None:
                 text+="Prezzo: {}€ \n".format(book.price)
             else: 

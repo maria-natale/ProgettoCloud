@@ -10,5 +10,6 @@ from .wishlist_dialog import WishlistDialog
 from .suggest_dialog import SuggestBooksDialog
 
 
+
 __all__ = [ "CancelAndHelpDialog", "MainDialog", "FindBookDialog",
      "LogoutDialog", "RegistrationDialog", "WishlistDialog", "SuggestBooksDialog"]
