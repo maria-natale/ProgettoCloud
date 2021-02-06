@@ -84,7 +84,7 @@ class FindBookDialog(CancelAndHelpDialog):
                     link=book.link
                     break"""
             if self.amazonLink is not None:
-                results, mean = FindBookDialog.get_reviews(self.amazonLink)
+                results, mean, negative_sentences = FindBookDialog.get_reviews(self.amazonLink)
                 if results is not None:
                     max=results["positive"]
                     strMax = "Ti consiglio fortemente l'acquisto."
@@ -97,9 +97,19 @@ class FindBookDialog(CancelAndHelpDialog):
                     elif results["neutral"] > max:
                         max = results["neutral"]
                         strMax = "Ti consiglio di dargli un'occhiata."
-                    sum=results["positive"]+results["negative"]+results["neutral"]
-                    message_text = ('''Ho analizzato le ultime {} recensioni.\nI lettori hanno espresso {} opinioni positive, {} opinioni neutrali e {} opinioni negative.\nLa media del valore delle recensioni è {} stelle.\n{}
-                    '''.format(sum, results["positive"], results["neutral"], results["negative"], mean, strMax))
+
+                    text=""
+                    for sentence in negative_sentences:
+                        text+=sentence
+                        text+="\n"
+                    message_text = ('''Ho analizzato le recensioni.\nI lettori hanno espresso {} opinioni positive, {} opinioni neutrali e {} opinioni negative.\nLa media del valore delle recensioni è {} stelle.\n'''.format(results["positive"], results["neutral"], results["negative"], mean))
+                    message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+                    await step_context.context.send_activity(message)
+                    if text!="":
+                        message_text = "\nTi mostro le principali critiche: \n"+text
+                        message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+                        await step_context.context.send_activity(message)
+                    message_text = "\n" +strMax+"\n"
                     message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
                     await step_context.context.send_activity(message)
             else:
@@ -267,7 +277,7 @@ class FindBookDialog(CancelAndHelpDialog):
             'type': 'reviews',
             'amazon_domain': 'amazon.it',
             'asin': asin,
-            'page': '2'
+            'page': '3'
         }
 
         # make the http GET request to Rainforest API
@@ -292,11 +302,11 @@ class FindBookDialog(CancelAndHelpDialog):
         
         text_analyzer=TextAnalyzer()
         if len(list_of_body)>0:
-            results = text_analyzer.sentiment_analysis(list_of_body)
+            results, negative_sentences = text_analyzer.sentiment_analysis(list_of_body)
         else:
-            results = None
+            results, negative_sentences = None
         
-        return (results, mean)
+        return (results, mean, negative_sentences)
 
     
 

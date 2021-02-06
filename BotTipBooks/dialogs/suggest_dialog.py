@@ -162,26 +162,6 @@ class SuggestBooksDialog(CancelAndHelpDialog):
 
         activity = MessageFactory.carousel(attachments) 
         return activity
-        """firstcolumnSet = ColumnSet([Column([TextBlock("Ecco i miei suggerimenti per te", color=Colors(4),
-        weight=FontWeight(3), horizontalAlignment=HorizontalAlignment(2), wrap=True)])])
-        items=[]
-        columnsSet=[]
-     
-        for book in list_of_books:
-            title=book.name
-            image_link = books_images[title]
-            open_url=OpenUrl(url=book.link)
-            itemImage=Image(url=image_link, spacing=Spacing(3), horizontalAlignment=HorizontalAlignment(2),
-                width="170px", height="180px", selectAction=open_url)
-            items.append(TextBlock("Titolo: {}".format(title), spacing=Spacing(3), wrap=True))
-            items.append(TextBlock("Prezzo: {} € ".format(book.price), spacing=Spacing(3), wrap=True))
-            items.append(TextBlock("Genere: {} ".format(book.genre), spacing=Spacing(3), wrap=True))
-            columnsSet.append(ColumnSet([Column([itemImage]),Column(items)], separator=True, spacing=Spacing(5)))
-            items=[]
-
-        card = AdaptiveCard(body=[firstcolumnSet]+columnsSet)
-
-        return CardFactory.adaptive_card(card.to_dict())"""
     
 
     @staticmethod

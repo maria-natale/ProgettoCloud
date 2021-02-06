@@ -20,7 +20,10 @@ class TextAnalyzer:
         results=[]
         response = self.client.analyze_sentiment(documents=list)
         for result in response:
-            results.append(result.sentiment)
+            if result.sentiment == "negative" and result.confidence_scores.negative>=0.8:
+                results.append(result.sentiment)
+            elif result.sentiment == "positive" or result.sentiment == "neutral":
+                results.append(result.sentiment)
         
         n_positive=0
         n_negative=0
@@ -36,5 +39,13 @@ class TextAnalyzer:
             "negative": n_negative,
             "neutral": n_neutral
         }
-        return dic
+
+        negative_sentences = []
+
+        for res in response:
+            for i, sentence in enumerate(res.sentences):
+                if sentence.sentiment == "negative" and sentence.confidence_scores.negative>=0.9:
+                    negative_sentences.append(sentence.text)
+                    print(sentence)
+        return dic, negative_sentences
             
