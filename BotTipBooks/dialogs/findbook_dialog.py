@@ -98,17 +98,14 @@ class FindBookDialog(CancelAndHelpDialog):
                         max = results["neutral"]
                         strMax = "Ti consiglio di dargli un'occhiata."
 
-                    text=""
-                    for sentence in negative_sentences:
-                        text+=sentence
-                        text+="\n"
+                    
                     message_text = ('''Ho analizzato le recensioni.\nI lettori hanno espresso {} opinioni positive, {} opinioni neutrali e {} opinioni negative.\nLa media del valore delle recensioni è {} stelle.\n'''.format(results["positive"], results["neutral"], results["negative"], mean))
                     message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
                     await step_context.context.send_activity(message)
-                    if text!="":
-                        message_text = "\nTi mostro le principali critiche: \n"+text
-                        message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
-                        await step_context.context.send_activity(message)
+                    await step_context.context.send_activity(MessageFactory.text("Ecco le principali critiche:"))
+                    if negative_sentences is not None:
+                        for sentence in negative_sentences:
+                            await step_context.context.send_activity(MessageFactory.text(sentence))
                     message_text = "\n" +strMax+"\n"
                     message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
                     await step_context.context.send_activity(message)
@@ -251,7 +248,7 @@ class FindBookDialog(CancelAndHelpDialog):
     async def validateName(prompt_context: PromptValidatorContext) -> bool:
         return (
             prompt_context.recognized.succeeded
-            and 3 <= len(prompt_context.recognized.value) <= 30
+            and 3 <= len(prompt_context.recognized.value) <= 50
         )
     
     @staticmethod
