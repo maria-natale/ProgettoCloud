@@ -189,7 +189,7 @@ class MainDialog(ComponentDialog):
         intent = await LuisHelper.execute_luis_query(self._luis_recognizer,step_context.context)
         print('Intent is: '+str(intent))
 
-        if option=="quit" or option=="esci":
+        if option.lower()=="quit" or option.lower()=="esci":
             await step_context.context.send_activity("Cancelling")
             return await step_context.cancel_all_dialogs() 
         if option=="info" or intent==Intent.INFO.value:
