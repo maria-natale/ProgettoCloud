@@ -14,10 +14,6 @@ customConfigId = "7ef069d7-04d8-4bad-b8c4-da9912bdd273"
 list_of_links = []
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
-
-
-
     name_of_book= req.params.get('name') #prendi il nome del libro dalla richiesta
     who_has_to_scrape = req.params.get('who') #parametro per capire su quale sito si deve fare scraping
     if not name_of_book or not who_has_to_scrape:
@@ -31,9 +27,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     if name_of_book and who_has_to_scrape:
        list_of_results = wich_scraper(name_of_book,who_has_to_scrape)
-       logging.info('Sono nel main dopo assegnazione di list_of_result')
-       logging.info('Ecco il contenuto della lista:')
-       logging.info(list_of_results)
        if len(list_of_results)<=5:
            return func.HttpResponse(f"""{list_of_results[0]} \n {list_of_results[1]} \n
             {list_of_results[2]} \n {list_of_results[3]} \n {list_of_results[4]}\n {list_of_results[5]}\n""")
@@ -56,16 +49,15 @@ def call_bing (searchTerms,list_):
     json_object_result = json.loads(r.text)
     #print(json_object_result)
     values= json_object_result['webPages']['value']
-    for j in range(len(values)):
-        list_.append(values[j]['url'])
+    logging.info(values)
+    #for j in range(len(values)):
+    list_.append(values[0]['url'])
 
 def scrape_hoepli (url):   # in ordine restituisce titolo,autore,disponibilità e prezzo, genere
     page = urlopen(url)
-    logging.info('URL HOEPLI: '+url)
     html_bytes = page.read()
     html = html_bytes.decode("utf-8")
     soup = BeautifulSoup(html, "html.parser")
-    logging.info('URL HOEPLI: '+url)
     list_of_result = []
     list_of_result.append('Hoepli')
     tit = soup.find('h1')
@@ -114,7 +106,6 @@ def scrape_hoepli (url):   # in ordine restituisce titolo,autore,disponibilità 
 
 def scrape_ibs(url):  #manca genere
     page = urlopen(url)
-    logging.info('URL IBS: '+url)
     html_bytes = page.read()
     html = html_bytes.decode("utf-8")
     soup = BeautifulSoup(html, "html.parser")
@@ -161,7 +152,6 @@ def scrape_ibs(url):  #manca genere
 
 def scrape_amazon(url): #completo
     clear_url = url[url.rindex('/') + 1:] #asin del libro
-    logging.info('URL AMAZON: '+url)
     scrape_am_result =[]
     scrape_am_result.append('Amazon')
     params = {
@@ -174,7 +164,6 @@ def scrape_amazon(url): #completo
     result = requests.get('https://api.rainforestapi.com/request', params)
     jsonStringResult = json.dumps(result.json())
     jsonResult = json.loads(jsonStringResult)
-    logging.info(jsonResult)
     try:
         scrape_am_result.append(jsonResult['product']['title'])
     except KeyError:
@@ -209,7 +198,6 @@ def scrape_amazon(url): #completo
 
 def scrape_mondadori(url): #completo
     page = urlopen(url)
-    logging.info('URL MONDADORI: '+url)
     html_bytes = page.read()
     html = html_bytes.decode("utf-8")
     soup = BeautifulSoup(html, "html.parser")
@@ -274,9 +262,8 @@ def scrape_mondadori(url): #completo
     res_scrape.append(url)
     return res_scrape
 
-def scrape_not_available_feltrinelli(url): #in caso il libro non sia disponibile
+def scrape_not_available_feltrinelli(url):
     page = requests.get(url)
-    logging.info('SCRAPE FELTR NOT AV URL: '+url)
     soup = BeautifulSoup(page.content, 'html.parser')
     result_ = []
     result_.append('Feltrinelli')
@@ -313,30 +300,26 @@ def scrape_not_available_feltrinelli(url): #in caso il libro non sia disponibile
 
 def scrape_feltrinelli(url):
     page = requests.get(url)
-    logging.info('URL FELTRINELLI: '+url)
     soup = BeautifulSoup(page.content, 'html.parser')
     result_felt = []
     result_felt.append('Feltrinelli')
-    # Prende il titolo ed autore
     resultTitle = soup.findAll('div', attrs={"class": "head-intro"})
     if resultTitle is None:
         result_felt.append(None)
         result_felt.append(None)
     else:
         for y in resultTitle:
-            result_felt.append(y.find('span').text) #nome libro
-            result_felt.append(print(y.find('a').text)) #autore
+            result_felt.append(y.find('span').text) 
+            result_felt.append(print(y.find('a').text)) 
 
-    # Prende la disponibilità del prodotto
     resultAvailability = soup.findAll('div', attrs={"class": "availability"})
     if resultAvailability is None:
         result_felt.append('Non disponibile')
     else:
         for span in resultAvailability:
             if span.find('span') is not None:
-                result_felt.append(span.find('span').text) #disponibilità
+                result_felt.append(span.find('span').text) 
 
-    # Prende il prezzo
     resultsPrice = soup.findAll('div', attrs={"class": "price clearfix"})
     if resultsPrice is None:
         result_felt.append(None)
@@ -364,10 +347,12 @@ def scrape_feltrinelli(url):
 
 
 def wich_scraper(name,who):
-    web_sites = ['Hoepli', 'Ibs', 'Amazon', 'Mondadori', 'Feltrinelli']
+    web_sites = ['Hoepli', 'Ibs','Mondadori', 'Feltrinelli','Amazon']
+   
     if who =='all':
+        #link_amazon = call_bing(name+' libro'+' amazon')
         for i in range(len(web_sites)):
-            searchTerms = name+' '+ web_sites[i]
+            searchTerms = name+' libro'+' '+ web_sites[i]
             call_bing(searchTerms, list_of_links)
         logging.info('chiamata prima di hoepli')
         result_of_hoepli_scrape = scrape_hoepli(list_of_links[len(list_of_links)-5]) #lista delle informazioni di hoepli
@@ -375,40 +360,42 @@ def wich_scraper(name,who):
         logging.info('chiamata prima di ibs')
         result_of_ibs_scrape = scrape_ibs(list_of_links[len(list_of_links)-4]) #lista informazioni ibs
         logging.info('IBS list: '+str(result_of_ibs_scrape))
-        logging.info('chiamata prima di amazon')
-        result_of_amazon_scrape = scrape_amazon(list_of_links[len(list_of_links)-3]) #lista informazioni amazon
-        logging.info('List AMazon: '+str(result_of_amazon_scrape))
-        logging.info('chiamata prima di mondadori')
-        result_of_mond_scrape = scrape_mondadori(list_of_links[len(list_of_links)-2])
+        #logging.info('chiamata prima di amazon')
+        #result_of_amazon_scrape = scrape_amazon(list_of_links[len(list_of_links)-3]) #lista informazioni amazon
+        #logging.info('List AMazon: '+str(result_of_amazon_scrape))
+        #logging.info('chiamata prima di mondadori')
+        result_of_mond_scrape = scrape_mondadori(list_of_links[len(list_of_links)-3])
         logging.info('List Mondadori: '+ str(result_of_mond_scrape))
         logging.info('chiamata prima di feltrinelli')
-        result_of_felt_scrape = scrape_feltrinelli(list_of_links[len(list_of_links)-1])
+        result_of_felt_scrape = scrape_feltrinelli(list_of_links[len(list_of_links)-2])
         logging.info('List Feltri: '+str(result_of_felt_scrape))
-        concat_list = result_of_hoepli_scrape+result_of_ibs_scrape+result_of_amazon_scrape+result_of_mond_scrape+result_of_felt_scrape
+        link_amazon = list_of_links[len(list_of_links)-1]
+        concat_list =[link_amazon]+ result_of_hoepli_scrape+result_of_ibs_scrape+result_of_mond_scrape+result_of_felt_scrape
         logging.info('Prima della concatenazione')
+        
         logging.info(concat_list)
         return concat_list
 
     if who =='hoepli':
-        searchTerms = name+' '+web_sites[0]
+        searchTerms = name+' libro'+' '+web_sites[0]
         call_bing(searchTerms,list_of_links)
         return scrape_hoepli(list_of_links[len(list_of_links)-1])
 
     if who =='ibs':
-        searchTerms = name + ' ' + web_sites[1]
+        searchTerms = name +' libro'+' ' + web_sites[1]
         call_bing(searchTerms, list_of_links)
         logging.info('link: '+list_of_links[0])
         return scrape_ibs(list_of_links[len(list_of_links)-1])
     if who =='amazon':
-        searchTerms = name + ' ' + web_sites[2]
+        searchTerms = name +' libro'+ ' ' + web_sites[4]
         call_bing(searchTerms, list_of_links)
         return scrape_amazon(list_of_links[len(list_of_links)-1])
     if who=='mondadori':
-        searchTerms = name + ' ' + web_sites[3]
+        searchTerms = name +' libro'+' ' + web_sites[2]
         call_bing(searchTerms, list_of_links)
         return scrape_mondadori(list_of_links[len(list_of_links)-1])
     if who=='feltrinelli':
-        searchTerms = name + ' ' + web_sites[4]
+        searchTerms = name +' libro'+' ' + web_sites[3]
         call_bing(searchTerms, list_of_links)
         return scrape_feltrinelli(list_of_links[len(list_of_links)-1])
 
