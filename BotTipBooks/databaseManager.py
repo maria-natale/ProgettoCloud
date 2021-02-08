@@ -52,8 +52,11 @@ class DatabaseManager:
                 cursor.execute("INSERT INTO Utenti (id) values (?)", iduser)
                 conn.commit()
                 for c in categories:
-                    cursor.execute("INSERT INTO UtentiCategorie (utente, categoria) values (?,?)", iduser, c.name)
-                conn.commit()
+                    try:
+                        cursor.execute("INSERT INTO UtentiCategorie (utente, categoria) values (?,?)", iduser, c.name)
+                        conn.commit()
+                    except pyodbc.IntegrityError:
+                        pass
                 return True
         return False
 

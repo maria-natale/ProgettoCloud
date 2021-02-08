@@ -162,43 +162,11 @@ class WishlistDialog(CancelAndHelpDialog):
             activity = MessageFactory.carousel(attachments) 
             return (activity, True)
         else:
-            new_card = CardFactory.hero_card(title ="La tua wishlist è vuota", subtitle= '''Non puoi eseguire nessuna operazione.
-                Puoi cercare un libro ed aggiungerlo. Ti riporto al menù principale. ''')
+            new_card = HeroCard(title ="La tua wishlist è vuota", subtitle= '''Non puoi eseguire nessuna operazione. Puoi cercare un libro ed aggiungerlo. Ti riporto al menù principale. ''')
             attachments.append(CardFactory.hero_card(new_card))
             activity = MessageFactory.carousel(attachments) 
             return (activity, False)
         
-        """firstcolumnSet = ColumnSet([Column([TextBlock("La tua wishlist", color=Colors(7), weight=FontWeight(3),
-            horizontalAlignment=HorizontalAlignment(2), wrap=True)])])
-        items=[]
-        columnsSet=[]
-        flag=False
-        for book in books:
-            flag=True
-            if book.author is not None:
-                items.append(TextBlock("{} di {} ".format(book.name, book.author), weight=FontWeight(3), color=Colors(2), wrap=True, isSubtle=True))
-            else:
-                items.append(TextBlock("{}".format(book.name, book.author), weight=FontWeight(3), color=Colors(2), wrap=True, isSubtle=True))
-            items.append(TextBlock("Genere: {}".format(book.genre), weight=FontWeight(3), color=Colors(2), wrap=True, isSubtle=True))
-            items.append(TextBlock("Nome del sito: {} ".format(book.site), spacing=Spacing(3), wrap=True)) 
-            if book.price is not None:
-                items.append(TextBlock("Prezzo: {} € ".format(book.price), spacing=Spacing(3), wrap=True))
-            else: 
-                items.append(TextBlock("Prezzo non disponibile", spacing=Spacing(3), wrap=True))
-            items.append(TextBlock("Disponibilità: {} ".format(book.availability), spacing=Spacing(3), wrap=True))
-            items.append(TextBlock("Link per l'acquisto: {} ".format(book.link), spacing=Spacing(3), wrap=True, color=Colors(5)))
-            columnsSet.append(ColumnSet([Column(items)], separator=True, spacing=Spacing(4)))
-            items=[]
-        if flag:
-            card = AdaptiveCard(body=[firstcolumnSet]+columnsSet)
-            return (CardFactory.adaptive_card(card.to_dict()), True)
-        else:
-            firstcolumnSet = ColumnSet([Column([TextBlock("La tua wishlist è vuota", color=Colors(7), weight=FontWeight(3),
-            horizontalAlignment=HorizontalAlignment(2), wrap=True)])])
-            columnSet = ColumnSet([Column([TextBlock('''Non puoi eseguire nessuna operazione.
-                Puoi cercare un libro ed aggiungerlo. Ti riporto al menù principale.''',wrap=True)])])
-            card = AdaptiveCard(body=[firstcolumnSet, columnSet])
-            return (CardFactory.adaptive_card(card.to_dict()), False)"""
 
     
     def set_recognizer(self, luis_recognizer: BotRecognizer):

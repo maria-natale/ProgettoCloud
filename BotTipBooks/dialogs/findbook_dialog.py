@@ -10,7 +10,6 @@ import requests
 from bean import BookInfo
 from databaseManager import DatabaseManager
 from botbuilder.core.card_factory import CardFactory
-from pyadaptivecards.card import AdaptiveCard
 from pyadaptivecards.components import TextBlock, Column
 from pyadaptivecards.container import ColumnSet
 from pyadaptivecards.options import Colors, HorizontalAlignment, Spacing, FontWeight
@@ -36,19 +35,18 @@ class FindBookDialog(CancelAndHelpDialog):
                 self.confirmRec_step,
                 self.prompt_to_wish,
                 self.confirm_step, 
-                self.add_to_wishlist]
+                self.add_to_wishlist
+                ]
             )
         )
 
         self.initial_dialog_id = "WFDialog"
-        self.books=[]
-        self.amazonLink = None
 
 
     async def prompt_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         message_text = "Quale libro vuoi cercare?"
-        self.books=[]
-        self.amazonLink = None
+        step_context.values["books"] = []
+        step_context.values["amazonLink"] = None
         prompt_message = MessageFactory.text(
             message_text, message_text, InputHints.expecting_input
         )
@@ -61,30 +59,33 @@ class FindBookDialog(CancelAndHelpDialog):
 
     async def search_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         book_name=step_context.result
-        card= self.find_book(book_name) 
+        card = self.find_book(book_name, step_context) 
         await step_context.context.send_activity(card)
 
-        if len(self.books)>0 and self.amazonLink is not None:
+        print(step_context.context.activity.from_property.id)
+        books = step_context.values["books"]
+        amazonLink = step_context.values["amazonLink"]
+    
+        if len(books)>0 and amazonLink is not None:
             message_text = "Vuoi conoscere le recensioni sul libro?"
             prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
             return await step_context.prompt(
                 ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message,
                     retry_prompt=MessageFactory.text('''Vuoi conoscere le recensioni sul libro? Scrivi yes o no'''))
                 )
+        
         return await step_context.end_dialog()
 
 
 
     async def confirmRec_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         result=step_context.result
+        amazonLink = step_context.values["amazonLink"]
         link=None
         if result:
-            """for book  in self.books:
-                if book.site.lower()=="amazon":
-                    link=book.link
-                    break"""
-            if self.amazonLink is not None:
-                results, mean, negative_sentences = FindBookDialog.get_reviews(self.amazonLink)
+            if amazonLink is not None:
+                print(amazonLink)
+                results, mean, negative_sentences = FindBookDialog.get_reviews(amazonLink)
                 if results is not None:
                     max=results["positive"]
                     strMax = "Ti consiglio fortemente l'acquisto."
@@ -97,22 +98,28 @@ class FindBookDialog(CancelAndHelpDialog):
                     elif results["neutral"] > max:
                         max = results["neutral"]
                         strMax = "Ti consiglio di dargli un'occhiata."
+                    if strMax == "Ti consiglio fortemente l'acquisto." and mean<3:
+                        strMax = "Non te lo consiglio affatto."
+                    elif 3<= mean<4:
+                        strMax = "Ti consiglio di dargli un'occhiata."
 
                     
                     message_text = ('''Ho analizzato le recensioni.\nI lettori hanno espresso {} opinioni positive, {} opinioni neutrali e {} opinioni negative.\nLa media del valore delle recensioni è {} stelle.\n'''.format(results["positive"], results["neutral"], results["negative"], mean))
                     message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
                     await step_context.context.send_activity(message)
-                    await step_context.context.send_activity(MessageFactory.text("Ecco le principali critiche:"))
-                    if negative_sentences is not None:
+                    
+                    """if negative_sentences is not None and len(negative_sentences)>0:
+                        await step_context.context.send_activity(MessageFactory.text("Ecco le principali critiche:"))
                         for sentence in negative_sentences:
-                            await step_context.context.send_activity(MessageFactory.text(sentence))
+                            await step_context.context.send_activity(MessageFactory.text(sentence))"""
                     message_text = "\n" +strMax+"\n"
                     message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
                     await step_context.context.send_activity(message)
-            else:
-                message_text = ('''Errore durante l'analisi delle recensioni''')
-                message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
-                await step_context.context.send_activity(message)
+                    return await step_context.next([])
+
+            message_text = ('''Errore durante l'analisi delle recensioni''')
+            message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+            await step_context.context.send_activity(message)
         return await step_context.next([])
 
 
@@ -141,21 +148,22 @@ class FindBookDialog(CancelAndHelpDialog):
         result=step_context.result
         iduser=step_context.context.activity.from_property.id
         book_to_add=BookInfo()
-        for book in self.books:
+        books = step_context.values["books"]
+        for book in books:
             if book.site.lower()==result.lower():
                 book_to_add=book
                 break
-        for book in self.books:
+        for book in books:
             if book.name is not None:
                 book_to_add.name=book.name
                 break
-        for book in self.books:
+        for book in books:
             if book.author is not None:
                 book_to_add.author=book.author
                 break
                     
         genres=[]
-        for book in self.books:
+        for book in books:
             if book.genre is not None:
                 genres.append(book.genre)
         if book_to_add.site is not None:
@@ -170,19 +178,19 @@ class FindBookDialog(CancelAndHelpDialog):
         return await step_context.end_dialog()
     
 
-    def create_result_card(self):
+    def create_result_card(self, books):
         title = None
         author = None
         genre = None
-        for book in self.books:
+        for book in books:
             if book.name is not None:
                 title=book.name
                 break
-        for book in self.books:
+        for book in books:
             if book.author is not None:
                 author=book.author
                 break
-        for book in self.books:
+        for book in books:
             if book.genre is not None:
                 genre=book.genre
                 break
@@ -193,7 +201,7 @@ class FindBookDialog(CancelAndHelpDialog):
             card=HeroCard(title="RISULTATI", subtitle=subtitle)
             attachments.append(CardFactory.hero_card(card))
             text=""
-            for book in self.books:
+            for book in books:
                 text+="Nome del sito: {} \n".format(book.site)
                 if book.price is not None:
                     text+="Prezzo: {}€ \n".format(book.price)
@@ -210,12 +218,14 @@ class FindBookDialog(CancelAndHelpDialog):
         
 
 
-    def find_book(self, title: str):
+    def find_book(self, title: str, step_context):
         r= requests.get("https://bookscraping.azurewebsites.net/api/find-book?name={}&who=all".format(title))      
         string_result=r.text.split("\n")
-        self.amazonLink = string_result[0]
+        amazonLink = string_result[0]
+        step_context.values["amazonLink"] =amazonLink
         string_result = string_result[1:]
         book=BookInfo()
+        books = []
         for i, s in enumerate(string_result):
             if i%7==0:
                 book=BookInfo()
@@ -239,8 +249,9 @@ class FindBookDialog(CancelAndHelpDialog):
                 book.genre=s  if s!="None" or s!='' else None
             elif i%7==6:
                 book.link=s
-                self.books.append(book)
-        return self.create_result_card()
+                books.append(book)
+        step_context.values["books"] = books
+        return self.create_result_card(books)
         
         
 
@@ -301,7 +312,7 @@ class FindBookDialog(CancelAndHelpDialog):
         if len(list_of_body)>0:
             results, negative_sentences = text_analyzer.sentiment_analysis(list_of_body)
         else:
-            results, negative_sentences = None
+            results, negative_sentences = (None, None)
         
         return (results, mean, negative_sentences)
 

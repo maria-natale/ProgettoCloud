@@ -26,7 +26,7 @@ class CancelAndHelpDialog(ComponentDialog):
         if inner_dc.context.activity.type == ActivityTypes.message:
             text = inner_dc.context.activity.text.lower()
 
-            help_message_text = "Show Help..."
+            help_message_text = "Sono un bot dotato di intelligenza artificiale che ti permette di:\n\n- Ricercare libri e mostrarti i prezzi migliori sul mercato.\n- Creare una wishlist dove poter inserire tutti i libri che ti interessano.\n- Mantenere sott'occhio i libri della tua wishlist e avvisarti se cambiano di prezzo, o ritornano disponibili.\n- Posso offrirti suggerimenti su nuovi libri da leggere in base alle tue preferenze.\n- Posso guidarti all'acquisto di nuovi libri, confrontando le varie recensioni per un particolare libro che ti interessa.\n\nPuoi utilizzarmi come preferisci, puoi impartirmi comandi, oppure utilizzare i bottoni del menu. "
             help_message = MessageFactory.text(
                 help_message_text, help_message_text, InputHints.expecting_input
             )

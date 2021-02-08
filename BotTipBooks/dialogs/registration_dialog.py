@@ -1,4 +1,4 @@
-from botbuilder.dialogs import ComponentDialog, DialogContext, DialogTurnResult, DialogTurnStatus, PromptOptions, TextPrompt, WaterfallDialog, WaterfallStepContext
+from botbuilder.dialogs import ComponentDialog, DialogContext, DialogTurnResult, PromptValidatorContext, DialogTurnStatus, PromptOptions, TextPrompt, WaterfallDialog, WaterfallStepContext
 from botbuilder.schema import ActivityTypes, InputHints
 from botbuilder.core import CardFactory, MessageFactory
 from .cancel_and_help_dialog import CancelAndHelpDialog
@@ -22,92 +22,133 @@ username = 'useradmin'
 password = 'Progettocloud21'   
 driver= '{ODBC Driver 17 for SQL Server}'
 
+CATEGORIES=DatabaseManager.find_categories()
+for cat in CATEGORIES:
+    if cat.name == "Genere sconosciuto":
+        CATEGORIES.remove(cat)
 
 class RegistrationDialog(CancelAndHelpDialog):
     def __init__(self, dialog_id: str = None):
         super(RegistrationDialog, self).__init__(dialog_id or RegistrationDialog.__name__)
 
-        self.CATEGORIES=DatabaseManager.find_categories()
-        for cat in self.CATEGORIES:
-            if cat.name == "Genere sconosciuto":
-                self.CATEGORIES.remove(cat)
-        self.selected=[]
-        self.add_dialog(TextPrompt(TextPrompt.__name__))
+        
+        self.add_dialog(TextPrompt(TextPrompt.__name__, RegistrationDialog.validate))
         self.add_dialog(
             WaterfallDialog(
-                "WFDialog", [self.select_categories, self.validate, self.loop_step]
+                "WFDialog", [self.select_first,
+                    self.select_second,
+                    self.select_third,
+                    self.register]
             )
         )
 
         self.initial_dialog_id = "WFDialog"
 
 
-    async def select_categories(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        card=self.create_card()
+    async def select_first(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        step_context.values["categories"] = CATEGORIES
+        step_context.values["selected"] = []
 
+        card=self.create_card(step_context)
+        
         return await step_context.prompt(
             TextPrompt.__name__,
             PromptOptions(
-                prompt = MessageFactory.attachment(card)
+                prompt = MessageFactory.attachment(card),
+                retry_prompt= MessageFactory.text("Inserisci una categoria valida.")
+            )
+        )     
+
+
+    async def select_second(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        result = step_context.result
+        selected = step_context.values["selected"]
+        categories = step_context.values["categories"]
+        for c in categories: 
+            print(c.name)
+        for c in CATEGORIES:
+            if result.lower()==c.name.lower():
+                selected.append(c)
+                categories.remove(c)
+                step_context.values["selected"] = selected
+                step_context.values["categories"] = categories
+                break
+
+        card=self.create_card(step_context)
+        
+        return await step_context.prompt(
+            TextPrompt.__name__,
+            PromptOptions(
+                prompt = MessageFactory.attachment(card),
+                retry_prompt= MessageFactory.text("Inserisci una categoria valida.")
             )
         )        
+
+
+    async def select_third(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        result = step_context.result
+        selected = step_context.values["selected"]
+        categories = step_context.values["categories"]
+        for c in CATEGORIES:
+            if result.lower()==c.name.lower():
+                selected.append(c)
+                categories.remove(c)
+                step_context.values["selected"] = selected
+                step_context.values["categories"] = categories
+                
+        card=self.create_card(step_context)
+        
+        return await step_context.prompt(
+            TextPrompt.__name__,
+            PromptOptions(
+                prompt = MessageFactory.attachment(card),
+                retry_prompt= MessageFactory.text("Inserisci una categoria valida.")
+            )
+        )           
         
 
-
-    async def validate(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        message=step_context.result
-        valid=False
-        for c in self.CATEGORIES:
-            if message.lower().replace(",", "").replace(" ", "")==c.name.lower().replace(",", "").replace(" ", ""):
-                self.selected.append(c)
-                self.CATEGORIES.remove(c)
-                valid=True
-                break
-        if not valid:
-            message_text = ("La categoria inserita non è valida")
-            message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
-            await step_context.context.send_activity(message)
-        else:
-            n=3-len(self.selected)
-            if n>0:
-                message_text = ("La categoria {} è stata selezionata correttamente. Ti restano ancora {} categorie da selezionare".format(c.name, n))
-                message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
-                await step_context.context.send_activity(message)
-            else:
-                message_text = ("La categoria {} è stata selezionata correttamente. ".format(c.name))
-                message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
-                await step_context.context.send_activity(message)
-        return await step_context.next([])
-
+    
+    async def register(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        result = step_context.result
+        selected = step_context.values["selected"]
+        categories = step_context.values["categories"]
+        for c in CATEGORIES:
+            if result.lower().replace(",", "").replace(" ", "")==c.name.lower().replace(",", "").replace(" ", ""):
+                selected.append(c)
+                categories.remove(c)
+                step_context.values["selected"] = selected
+                step_context.values["categories"] = categories
+      
+        iduser=step_context.context.activity.from_property.id
+        DatabaseManager.add_user(iduser, selected)
+        message_text = ("Sei registrato.")
+        message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+        await step_context.context.send_activity(message)
+        return await step_context.end_dialog()
 
     
-    async def loop_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        if len(self.selected)<3:
-            return await step_context.replace_dialog("WFDialog")
-            for c in self.selected:
-                print(c.name)
-        else:
-            iduser=step_context.context.activity.from_property.id
-            DatabaseManager.add_user(iduser, self.selected)
-            self.CATEGORIES=DatabaseManager.find_categories()
-            self.CATEGORIES=self.CATEGORIES[:len(self.CATEGORIES)-1]
-            self.selected=[]
-            message_text = ("Sei registrato.")
-            message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
-            await step_context.context.send_activity(message)
-            return await step_context.end_dialog()
-    
 
-    def create_card(self):
-        title = "Scegli una categoria: \n\n"
+    def create_card(self, step_context):
+        categories = step_context.values["categories"]
+        title = "Scegli una categoria:"
         text=""
-        for c in self.CATEGORIES:
+        for c in categories:
             text+="- "+c.name
             text+="\n"
         card = HeroCard(title =title, text=text)
 
         return CardFactory.hero_card(card)
 
+
+    @staticmethod
+    async def validate(prompt_context: PromptValidatorContext) -> bool:
+        names=[]
+        for c in CATEGORIES:
+            names.append(c.name.lower())
+        return (
+            prompt_context.recognized.succeeded
+            and str(prompt_context.recognized.value).lower() in names
+        )
         
 
        

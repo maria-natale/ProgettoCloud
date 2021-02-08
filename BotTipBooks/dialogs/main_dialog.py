@@ -18,7 +18,6 @@ from .findbook_dialog import FindBookDialog
 from bean import Book, User
 from botbuilder.dialogs.prompts.oauth_prompt_settings import OAuthPromptSettings
 from botbuilder.dialogs.prompts.oauth_prompt import OAuthPrompt
-from .logout_dialog import LogoutDialog
 from botbuilder.dialogs.prompts.confirm_prompt import ConfirmPrompt
 from botbuilder.dialogs.choices.channel import Channel
 from .registration_dialog import RegistrationDialog
@@ -94,7 +93,6 @@ class MainDialog(ComponentDialog):
         )
 
         self.initial_dialog_id = "WFDialogLogin"
-        self.skip=False
         self.conversation_state=conversation_state
 
         
@@ -107,14 +105,14 @@ class MainDialog(ComponentDialog):
         
 
     async def login_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+        step_context.values["skip"] = False
         if step_context.result:
             iduser=step_context.context.activity.from_property.id
             print(iduser)
             print("sono nel login")
             #controlla se è registrato nel database
             if not DatabaseManager.user_is_registered(iduser):
-                await step_context.context.send_activity(MessageFactory.text('''Non sei registrato, ti farò 
-                selezionare tre categorie di interesse per effettuare la registrazione'''))
+                await step_context.context.send_activity(MessageFactory.text('''Non sei registrato, ti farò selezionare tre categorie di interesse per effettuare la registrazione'''))
                 return await step_context.begin_dialog(self.registration_dialog_id) #se non è registrato
             else:
                 messages = DatabaseManager.search_messages_user(iduser)
@@ -202,7 +200,7 @@ class MainDialog(ComponentDialog):
         if option=="cerca" or intent==Intent.FIND_BOOK.value:
             return await step_context.begin_dialog(self.findbook_dialog_id)
         if option=="wishlist" or intent==Intent.SHOW_WISHLIST.value:
-            self.skip=True
+            step_context.values["skip"] = True
             return await step_context.begin_dialog(self.wishlist_dialog_id)
         if option=="suggerisci" or intent==Intent.TIP_BOOK.value:
             return await step_context.begin_dialog(self.suggest_dialog_id)
@@ -215,14 +213,15 @@ class MainDialog(ComponentDialog):
 
         
     async def final_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        if not self.skip:
+        skip = step_context.values["skip"]
+        if not skip:
             message_text = "Posso fare qualcos'altro per te?"
             prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
             return await step_context.prompt(
                 ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message)
             )
         else:
-            self.skip=False
+            step_context.values["skip"] = False
             return await step_context.next(True)
 
 

@@ -24,7 +24,7 @@ def top_intent(intents: Dict[Intent, dict]) -> TopIntent:
         if intent_score.score > max_value:
             max_intent, max_value = intent, intent_score.score
 
-    return TopIntent(max_intent, max_value) #Restituisce l'intent più adatto?
+    return TopIntent(max_intent, max_value) 
 
 
 class LuisHelper:
