@@ -129,6 +129,7 @@ class DatabaseManager:
         with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
             with conn.cursor() as cursor:
                 try:
+                    book.name = book.name[:50]
                     cursor.execute("INSERT INTO Libri (titolo, autore, categoria) values (?, ?, ?)", book.name, book.author, book.genre)
                     conn.commit()
                 except pyodbc.IntegrityError:

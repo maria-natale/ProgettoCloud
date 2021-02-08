@@ -66,16 +66,19 @@ class RegistrationDialog(CancelAndHelpDialog):
         categories = step_context.values["categories"]
         for c in categories: 
             print(c.name)
-        for c in CATEGORIES:
+        for i,c in enumerate(categories):
             if result.lower()==c.name.lower():
                 selected.append(c)
-                categories.remove(c)
+                del categories[i]
                 step_context.values["selected"] = selected
                 step_context.values["categories"] = categories
                 break
 
         card=self.create_card(step_context)
         
+        message_text = ("Hai selezionato correttamente la categoria {}".format(result))
+        message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+        await step_context.context.send_activity(message)
         return await step_context.prompt(
             TextPrompt.__name__,
             PromptOptions(
@@ -89,15 +92,21 @@ class RegistrationDialog(CancelAndHelpDialog):
         result = step_context.result
         selected = step_context.values["selected"]
         categories = step_context.values["categories"]
-        for c in CATEGORIES:
+        for c in categories: 
+            print(c.name)
+        for i,c in enumerate(categories):
             if result.lower()==c.name.lower():
                 selected.append(c)
-                categories.remove(c)
+                del categories[i]
                 step_context.values["selected"] = selected
                 step_context.values["categories"] = categories
+                break
                 
         card=self.create_card(step_context)
         
+        message_text = ("Hai selezionato correttamente la categoria {}".format(result))
+        message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+        await step_context.context.send_activity(message)
         return await step_context.prompt(
             TextPrompt.__name__,
             PromptOptions(
@@ -112,13 +121,18 @@ class RegistrationDialog(CancelAndHelpDialog):
         result = step_context.result
         selected = step_context.values["selected"]
         categories = step_context.values["categories"]
-        for c in CATEGORIES:
-            if result.lower().replace(",", "").replace(" ", "")==c.name.lower().replace(",", "").replace(" ", ""):
+        for i,c in enumerate(categories):
+            if result.lower()==c.name.lower():
                 selected.append(c)
-                categories.remove(c)
+                del categories[i]
                 step_context.values["selected"] = selected
                 step_context.values["categories"] = categories
-      
+                break
+        
+
+        message_text = ("Hai selezionato correttamente la categoria {}".format(result))
+        message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
+        await step_context.context.send_activity(message)
         iduser=step_context.context.activity.from_property.id
         DatabaseManager.add_user(iduser, selected)
         message_text = ("Sei registrato.")

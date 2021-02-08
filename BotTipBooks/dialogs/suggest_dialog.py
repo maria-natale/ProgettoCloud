@@ -14,6 +14,7 @@ from pyadaptivecards.actions import OpenUrl
 from botbuilder.dialogs.prompts import PromptValidatorContext
 from botbuilder.schema import HeroCard, InputHints
 import random
+from typing import Dict
 
 cat_and_code = {"Adolescenti e ragazzi": "13077484031",
     "Arte cinema e fotografia": "13077485031",
@@ -28,9 +29,7 @@ cat_and_code = {"Adolescenti e ragazzi": "13077484031",
     "Storia": "508796031"
 }
 
-list_of_books=[]
-books_images=dict()
-
+dic = dict()
 class SuggestBooksDialog(CancelAndHelpDialog):
     def __init__(self, dialog_id: str = None):
         super(SuggestBooksDialog, self).__init__(dialog_id or SuggestBooksDialog.__name__)
@@ -45,6 +44,7 @@ class SuggestBooksDialog(CancelAndHelpDialog):
         )
 
         self.initial_dialog_id = "WFDialog"
+    
         
     
     async def showBooks_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
@@ -53,11 +53,13 @@ class SuggestBooksDialog(CancelAndHelpDialog):
         user_with_info = DatabaseManager.find_user_info(iduser)
         genres_user = user_with_info.categories
         
-        index=random.randint(0,2)
+        index=random.randint(0,len(genres_user)-1)
         category = genres_user[index]
         code = cat_and_code[category.name]
         books = SuggestBooksDialog.call_amazon(code)
         card=SuggestBooksDialog.create_card(books, category.name)
+        step_context.values["books"] = books
+        dic[iduser] = books
         await step_context.context.send_activity(card)
 
         message_text="Vuoi aggiungere un libro alla tua wishlist?"
@@ -122,20 +124,17 @@ class SuggestBooksDialog(CancelAndHelpDialog):
             except KeyError:
                 price = None
             category = libro['current_category']['name']
-            image_link = libro['image']
             link = libro['link']
             book.name = title
             book.price = price
             book.genre = category
             book.link = link
             booksTemp.append(book)
-            books_images[title] = image_link
             book=BookInfo()
 
         for i in range(3):
             index = random.randint(0, len(booksTemp)-1)
             book=booksTemp[index]
-            list_of_books.append(book)
             books_cat.append(book)
             booksTemp.remove(book)
         return books_cat
@@ -175,8 +174,10 @@ class SuggestBooksDialog(CancelAndHelpDialog):
     @staticmethod
     async def titleValidator(prompt_context: PromptValidatorContext) -> bool:
         title=prompt_context.recognized.value
+        iduser = prompt_context.context.activity.from_property.id
+        books = dic[iduser]
         book_to_add=None
-        for book in list_of_books:
+        for book in books:
             if book.name.replace(",","").lower()==title.replace(",","").lower():
                 book_to_add=book
                 break

@@ -13,37 +13,35 @@ from bot_recognizer import BotRecognizer
 from helpers.luis_helper import Intent, LuisHelper
 from botbuilder.dialogs.prompts import PromptValidatorContext
 import time
+from typing import Dict
 
+dic = dict()
 class WishlistDialog(CancelAndHelpDialog):
     def __init__(self, dialog_id: str = None):
         super(WishlistDialog, self).__init__(dialog_id or WishlistDialog.__name__)
         self.add_dialog(TextPrompt(TextPrompt.__name__))
+        self.add_dialog(TextPrompt("TitoloLibro", WishlistDialog.validateTitle))
         self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__, WishlistDialog.yes_noValidator))
         self.add_dialog(
             WaterfallDialog(
-                "WFDialog", [self.first_step, self.input_step, self.begin_next]
-            )
-        )
-
-        self.add_dialog(
-            WaterfallDialog(
-                "WFDialogCancella", [
-                    self.confirm_step,
-                    self.cancel_step,
-                    self.final_step
+                "WFDialog", [self.first_step,
+                self.input_step,
+                self.confirm_step,
+                self.cancel_step,
+                self.final_step
                 ]
             )
         )
 
         self.initial_dialog_id = "WFDialog"
         self._luis_recognizer=None
-        self.user=None
-        self.book_to_remove=None
-        self.title=None
+
     
     async def first_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        user=DatabaseManager.find_user_info(step_context.context.activity.from_property.id)
-        self.user=user
+        iduser = step_context.context.activity.from_property.id
+        user=DatabaseManager.find_user_info(iduser)
+        step_context.values["user"] = user
+        dic[iduser] = user.wishlist
         card, flag=self.create_wishlist_card(user.wishlist)
         await step_context.context.send_activity(card)
         if flag:
@@ -64,7 +62,8 @@ class WishlistDialog(CancelAndHelpDialog):
             message_text="Inserisci il titolo del libro che vuoi cancellare"
             prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
             return await step_context.prompt(
-                TextPrompt.__name__, PromptOptions(prompt=prompt_message)
+                "TitoloLibro", PromptOptions(prompt=prompt_message,
+                retry_prompt = MessageFactory.text("Inserisci un titolo valido."))
             )
         
         await step_context.context.send_activity(
@@ -75,47 +74,37 @@ class WishlistDialog(CancelAndHelpDialog):
         return await step_context.end_dialog()
 
 
-    async def begin_next(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        result=step_context.result
-        self.title=result
-        print(result)
-        return await step_context.replace_dialog("WFDialogCancella")
-
 
     async def confirm_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        result=self.title
-        for book in self.user.wishlist:
+        result=step_context.result
+        user  = step_context.values["user"]
+        book_to_remove = None
+        for book in user.wishlist:
             if book.name.replace(",","").lower()==result.replace(",","").lower():
-                self.book_to_remove=book
+                book_to_remove=book
                 break
         
-        if self.book_to_remove is not None:
-            message_text = "Sei sicuro di voler cancellare {}?".format(self.book_to_remove.name)
+        step_context.values["book_to_remove"] =book_to_remove
+        if book_to_remove is not None:
+            message_text = "Sei sicuro di voler cancellare {}?".format(book_to_remove.name)
             prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
             return await step_context.prompt(
                 ConfirmPrompt.__name__, PromptOptions(prompt=prompt_message,
                 retry_prompt=MessageFactory.text('''Sei sicuro di voler cancellare? Scrivi yes o no'''))
             )
-        else:
-            message_text="Il libro {} non è stato trovato nella tua wishlist. Per favore, inserisci nuovamente il titolo".format(result)
-            prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
-            self.book_to_remove=None
-            self.title=None
-            return await step_context.prompt(
-                TextPrompt.__name__, PromptOptions(prompt=prompt_message)
-            )
+        return await step_context.end_dialog()
             
 
     
     async def cancel_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        if self.title is None:
-            self.title=step_context.result
-            return await step_context.replace_dialog("WFDialogCancella")
         result=step_context.result
+        user = step_context.values["user"]
+        book_to_remove = step_context.values["book_to_remove"]
         if result:
-            self.user.wishlist.remove(self.book_to_remove)
-            DatabaseManager.remove_wishlist(self.user.idUser, self.book_to_remove)
-            message_text="Il libro {} è stato rimosso correttamente.".format(self.book_to_remove.name)
+            user.wishlist.remove(book_to_remove)
+            DatabaseManager.remove_wishlist(user.idUser, book_to_remove)
+            step_context.values["user"] = user
+            message_text="Il libro {} è stato rimosso correttamente.".format(book_to_remove.name)
             await step_context.context.send_activity(MessageFactory.text(message_text))
             return await step_context.next([])
         else:
@@ -129,7 +118,8 @@ class WishlistDialog(CancelAndHelpDialog):
             
 
     async def final_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        card, res=self.create_wishlist_card(self.user.wishlist)
+        user = step_context.values["user"]
+        card, res=self.create_wishlist_card(user.wishlist)
         await step_context.context.send_activity(card)
         return await step_context.end_dialog()
 
@@ -178,4 +168,20 @@ class WishlistDialog(CancelAndHelpDialog):
         return (
             prompt_context.recognized.succeeded
             and isinstance(prompt_context.recognized.value, bool)
+        )
+
+    
+    @staticmethod
+    async def validateTitle(prompt_context: PromptValidatorContext) -> bool:
+        title=prompt_context.recognized.value
+        iduser = prompt_context.context.activity.from_property.id
+        books = dic[iduser]
+        book_to_add=None
+        for book in books:
+            if book.name.replace(",","").lower()==title.replace(",","").lower():
+                book_to_add=book
+                break
+        return (
+            prompt_context.recognized.succeeded
+            and book_to_add is not None
         )

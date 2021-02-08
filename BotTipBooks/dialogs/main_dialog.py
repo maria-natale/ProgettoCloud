@@ -213,7 +213,11 @@ class MainDialog(ComponentDialog):
 
         
     async def final_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        skip = step_context.values["skip"]
+        try:
+            skip = step_context.values["skip"]
+        except KeyError:
+            skip = False
+            step_context.values["skip"] =False
         if not skip:
             message_text = "Posso fare qualcos'altro per te?"
             prompt_message = MessageFactory.text(message_text, message_text, InputHints.expecting_input)
