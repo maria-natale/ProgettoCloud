@@ -4,10 +4,12 @@ use BotTipBooksDatabase;
 
 create table Utenti(
 	id varchar (50) not null,
-	PRIMARY KEY (id));
+	PRIMARY KEY (id)
+);
 
 create table Categorie(
 	nomeCategoria varchar(50) not null,
+    sinonimi text,
     primary key (nomeCategoria)
 );
 
@@ -24,8 +26,8 @@ create table UtentiCategorie(
 );
 
 create table Libri(
-	titolo VARCHAR(50) NOT NULL,
-    autore VARCHAR (50) not null,
+	titolo VARCHAR(150) NOT NULL,
+    autore VARCHAR (100) not null,
     categoria varchar (50),
     FOREIGN KEY (categoria)
         REFERENCES Categorie (nomeCategoria)
@@ -36,8 +38,12 @@ create table Libri(
 
 create table Wishlist(
 	utente varchar (50) not null,
-    titoloLibro varchar(50) not null,
-    autoreLibro varchar(50) not null,
+    titoloLibro varchar(150) not null,
+    autoreLibro varchar(100) not null,
+    prezzo float,
+    sito varchar(50) not null,
+    disponibilita varchar(50),
+    link text,
     primary key(utente, titoloLibro, autoreLibro),
     FOREIGN KEY (utente)
         REFERENCES Utenti (id)
@@ -45,4 +51,13 @@ create table Wishlist(
 	FOREIGN KEY (titoloLibro, autoreLibro)
         REFERENCES Libri (titolo, autore)
         on update cascade on delete cascade
+);
+
+create table Messaggi(
+	idMessaggio int identity primary key,
+    utente varchar (50) not null,
+    messaggio text not null,
+    FOREIGN KEY (utente)
+        REFERENCES Utenti (id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );

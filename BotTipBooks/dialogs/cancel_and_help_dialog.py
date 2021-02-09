@@ -15,6 +15,12 @@ class CancelAndHelpDialog(ComponentDialog):
     def __init__(self, dialog_id: str):
         super(CancelAndHelpDialog, self).__init__(dialog_id)
 
+    async def on_continue_dialog(self, inner_dc: DialogContext) -> DialogTurnResult:
+        result = await self.interrupt(inner_dc)
+        if result is not None:
+            return result
+
+        return await super(CancelAndHelpDialog, self).on_continue_dialog(inner_dc)
 
     async def interrupt(self, inner_dc: DialogContext) -> DialogTurnResult:
         if inner_dc.context.activity.type == ActivityTypes.message:
@@ -25,7 +31,7 @@ class CancelAndHelpDialog(ComponentDialog):
                 help_message_text, help_message_text, InputHints.expecting_input
             )
 
-            if text in ("help", "?"):
+            if text.lower() in ("help", "?"):
                 await inner_dc.context.send_activity(help_message)
                 return DialogTurnResult(DialogTurnStatus.Waiting)
 

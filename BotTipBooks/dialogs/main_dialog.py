@@ -108,12 +108,10 @@ class MainDialog(ComponentDialog):
         step_context.values["skip"] = False
         if step_context.result:
             iduser=step_context.context.activity.from_property.id
-            print(iduser)
-            print("sono nel login")
-            #controlla se è registrato nel database
+            
             if not DatabaseManager.user_is_registered(iduser):
                 await step_context.context.send_activity(MessageFactory.text('''Non sei registrato, ti farò selezionare tre categorie di interesse per effettuare la registrazione'''))
-                return await step_context.begin_dialog(self.registration_dialog_id) #se non è registrato
+                return await step_context.begin_dialog(self.registration_dialog_id) 
             else:
                 messages = DatabaseManager.search_messages_user(iduser)
                 if len(messages)>0:
@@ -124,7 +122,7 @@ class MainDialog(ComponentDialog):
                     await step_context.context.send_activity(message)
                 return await step_context.next([])
         else:
-            await step_context.context.send_activity("Login was not successful please try again.")
+            await step_context.context.send_activity("Il login non è andato a buon fine. Riprova.")
             return await step_context.end_dialog()
     
 
@@ -185,9 +183,7 @@ class MainDialog(ComponentDialog):
 
     async def options_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         option=step_context.result
-        print('Option is: '+option)
         intent = await LuisHelper.execute_luis_query(self._luis_recognizer,step_context.context)
-        print('Intent is: '+str(intent))
 
         if option.lower()=="quit" or option.lower()=="esci":
             await step_context.context.send_activity("Cancelling")

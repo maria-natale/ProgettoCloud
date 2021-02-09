@@ -6,15 +6,11 @@ from dialogs import CancelAndHelpDialog
 import requests
 import json
 from bean import BookInfo
-from pyadaptivecards.container import ColumnSet
-from pyadaptivecards.components import Column, Image, TextBlock
-from pyadaptivecards.options import BlockElementHeight, Colors, FontWeight, HorizontalAlignment, Spacing
-from pyadaptivecards.card import AdaptiveCard
-from pyadaptivecards.actions import OpenUrl
 from botbuilder.dialogs.prompts import PromptValidatorContext
 from botbuilder.schema import HeroCard, InputHints
 import random
 from typing import Dict
+from config import DefaultConfig
 
 cat_and_code = {"Adolescenti e ragazzi": "13077484031",
     "Arte cinema e fotografia": "13077485031",
@@ -30,6 +26,8 @@ cat_and_code = {"Adolescenti e ragazzi": "13077484031",
 }
 
 dic = dict()
+CONFIG = DefaultConfig()
+
 class SuggestBooksDialog(CancelAndHelpDialog):
     def __init__(self, dialog_id: str = None):
         super(SuggestBooksDialog, self).__init__(dialog_id or SuggestBooksDialog.__name__)
@@ -88,8 +86,6 @@ class SuggestBooksDialog(CancelAndHelpDialog):
         title=step_context.result
         book_to_add=self.find_book(title)
         iduser=step_context.context.activity.from_property.id
-        print(book_to_add.name)
-        print(book_to_add.genre)
         if book_to_add is not None:
             if DatabaseManager.add_book_wishlist(iduser, book_to_add, [book_to_add.genre]):
                 message_text="Il libro {} è stato aggiunto alla tua wishlist.".format(book_to_add.name)
@@ -104,13 +100,13 @@ class SuggestBooksDialog(CancelAndHelpDialog):
     @staticmethod
     def call_amazon(code: str):
         params = {
-            'api_key': 'A2E5C7D9C233454FAE27F2A0911C42A8',
+            'api_key': CONFIG.KEY_AMAZON_API,
             'type': 'bestsellers',
             'url': 'https://www.amazon.it/gp/bestsellers/books/'+ code,
             'page': '1'
         }
 
-        api_result = requests.get('https://api.rainforestapi.com/request', params)# print the JSON response from Rainforest APIprint(json.dumps(api_result.json()))
+        api_result = requests.get('https://api.rainforestapi.com/request', params)
         jsonStringResult = json.dumps(api_result.json())
         jsonResult = json.loads(jsonStringResult)
         lista_bestseller = jsonResult['bestsellers']
@@ -140,8 +136,7 @@ class SuggestBooksDialog(CancelAndHelpDialog):
         return books_cat
 
         
-
-        
+    
     @staticmethod
     def create_card(books, categoria):
         card=HeroCard(title="Ecco i miei suggerimenti per te per la categoria: {}".format(categoria))
@@ -189,10 +184,9 @@ class SuggestBooksDialog(CancelAndHelpDialog):
 
 
     def find_book(self, title: str):
-        r= requests.get("https://bookscraping.azurewebsites.net/api/find-book?name={}&who=amazon".format(title))      
+        r = requests.get(""+CONFIG.ENDPOINT_FIND_FUNCTION+"?name={}&who=amazon".format(title))      
         string_result=r.text.split("\n")
         book=BookInfo()
-        print(string_result)
         for i, s in enumerate(string_result):
             if i==0:
                 book.site=s 

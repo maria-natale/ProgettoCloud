@@ -11,16 +11,7 @@ from botbuilder.dialogs.prompts.choice_prompt import ChoicePrompt
 from botbuilder.dialogs.choices import Choice
 from botbuilder.dialogs.choices.list_style import ListStyle
 from databaseManager import DatabaseManager
-from pyadaptivecards.container import ColumnSet
-from pyadaptivecards.components import Column, TextBlock
-from pyadaptivecards.options import Colors, FontWeight, HorizontalAlignment, Spacing
-from pyadaptivecards.card import AdaptiveCard
 
-server = 'servercc.database.windows.net'
-database = 'BotTipBooksDatabase'
-username = 'useradmin'
-password = 'Progettocloud21'   
-driver= '{ODBC Driver 17 for SQL Server}'
 
 CATEGORIES=DatabaseManager.find_categories()
 for cat in CATEGORIES:
@@ -64,8 +55,6 @@ class RegistrationDialog(CancelAndHelpDialog):
         result = step_context.result
         selected = step_context.values["selected"]
         categories = step_context.values["categories"]
-        for c in categories: 
-            print(c.name)
         for i,c in enumerate(categories):
             if result.lower()==c.name.lower():
                 selected.append(c)
@@ -92,8 +81,7 @@ class RegistrationDialog(CancelAndHelpDialog):
         result = step_context.result
         selected = step_context.values["selected"]
         categories = step_context.values["categories"]
-        for c in categories: 
-            print(c.name)
+        
         for i,c in enumerate(categories):
             if result.lower()==c.name.lower():
                 selected.append(c)

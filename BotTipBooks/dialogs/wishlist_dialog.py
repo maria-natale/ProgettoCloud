@@ -3,11 +3,7 @@ from .cancel_and_help_dialog import CancelAndHelpDialog
 from botbuilder.core import CardFactory, MessageFactory
 from databaseManager import DatabaseManager
 from typing import List
-from pyadaptivecards.card import AdaptiveCard
-from pyadaptivecards.container import ColumnSet
-from pyadaptivecards.components import Column, TextBlock
 from bean import BookInfo
-from pyadaptivecards.options import Colors, FontWeight, HorizontalAlignment, Spacing
 from botbuilder.schema import HeroCard, InputHints
 from bot_recognizer import BotRecognizer
 from helpers.luis_helper import Intent, LuisHelper
@@ -16,6 +12,7 @@ import time
 from typing import Dict
 
 dic = dict()
+
 class WishlistDialog(CancelAndHelpDialog):
     def __init__(self, dialog_id: str = None):
         super(WishlistDialog, self).__init__(dialog_id or WishlistDialog.__name__)
@@ -55,7 +52,6 @@ class WishlistDialog(CancelAndHelpDialog):
 
     async def input_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         intent = await LuisHelper.execute_luis_query(self._luis_recognizer,step_context.context)
-        print(str(intent))
         if intent == Intent.MENU_INTENT.value:
             return await step_context.end_dialog()
         if intent == Intent.CANCELLA_WISHLIST.value:
@@ -77,7 +73,7 @@ class WishlistDialog(CancelAndHelpDialog):
 
     async def confirm_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         result=step_context.result
-        user  = step_context.values["user"]
+        user = step_context.values["user"]
         book_to_remove = None
         for book in user.wishlist:
             if book.name.replace(",","").lower()==result.replace(",","").lower():
@@ -97,7 +93,7 @@ class WishlistDialog(CancelAndHelpDialog):
 
     
     async def cancel_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        result=step_context.result
+        result = step_context.result
         user = step_context.values["user"]
         book_to_remove = step_context.values["book_to_remove"]
         if result:
@@ -119,7 +115,7 @@ class WishlistDialog(CancelAndHelpDialog):
 
     async def final_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         user = step_context.values["user"]
-        card, res=self.create_wishlist_card(user.wishlist)
+        card, res = self.create_wishlist_card(user.wishlist)
         await step_context.context.send_activity(card)
         return await step_context.end_dialog()
 

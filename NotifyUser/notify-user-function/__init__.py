@@ -6,6 +6,7 @@ from .user import User
 import azure.functions as func
 import requests
 
+ENDPOINT = "https://bookscraping.azurewebsites.net/api/find-book"
 
 def main(mytimer: func.TimerRequest) -> None:
     utc_timestamp = datetime.datetime.utcnow().replace(
@@ -30,10 +31,10 @@ def add_messages(user: User):
 
         if new_book.price is not None and book.price is not None:
             if new_book.price!=book.price and new_book.price > book.price:
-                messagePrice = "Il prezzo del libro {} sul sito {} è aumentato. Prezzo precedente {}, nuovo prezzo {}".format(
+                messagePrice = "Il prezzo del libro {} sul sito {} è aumentato. Prezzo precedente {}�, nuovo prezzo {}�".format(
                     book.name, book.site, book.price, new_book.price)
             elif new_book.price!=book.price and new_book.price < book.price:
-                messagePrice = "Il prezzo del libro {} sul sito {} è diminuito. Prezzo precedente {}, nuovo prezzo {}".format(
+                messagePrice = "Il prezzo del libro {} sul sito {} è diminuito. Prezzo precedente {}�, nuovo prezzo {}�".format(
                     book.name, book.site, book.price, new_book.price)
 
         if new_book.availability is not None and book.availability is not None:
@@ -52,7 +53,7 @@ def add_messages(user: User):
 
 
 def find_book(title: str, who: str):
-    r= requests.get("https://bookscraping.azurewebsites.net/api/find-book?name={}&who={}".format(title, who))      
+    r= requests.get(""+ENDPOINT+"?name={}&who={}".format(title, who))      
     string_result=r.text.split("\n")
     book=BookInfo()
     print(string_result)

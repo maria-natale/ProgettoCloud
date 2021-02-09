@@ -4,6 +4,7 @@ from bean import BookInfo
 from bean import Book, Category
 from typing import List
 
+#dati di configurazione per l'utilizzo del database SQL
 server = 'servercc.database.windows.net'
 database = 'BotTipBooksDatabase'
 username = 'useradmin'
@@ -125,11 +126,9 @@ class DatabaseManager:
                         break
         if book.genre==None:
             book.genre="Genere sconosciuto"
-        print(book.genre)
         with pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
             with conn.cursor() as cursor:
                 try:
-                    book.name = book.name[:50]
                     cursor.execute("INSERT INTO Libri (titolo, autore, categoria) values (?, ?, ?)", book.name, book.author, book.genre)
                     conn.commit()
                 except pyodbc.IntegrityError:

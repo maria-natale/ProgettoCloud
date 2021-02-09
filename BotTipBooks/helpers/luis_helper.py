@@ -31,9 +31,6 @@ class LuisHelper:
     @staticmethod
     async def execute_luis_query(
         luis_recognizer: LuisRecognizer, turn_context: TurnContext) -> (Intent):
-        """
-        Returns an object with preformatted LUIS results for the bot's dialogs to consume.
-        """
         result = None
         intent = None
 

@@ -1,17 +1,18 @@
 from azure.ai.textanalytics import TextAnalyticsClient
 from azure.core.credentials import AzureKeyCredential
 from typing import List
+from config import DefaultConfig
 
-
+CONFIG = DefaultConfig()
 class TextAnalyzer:
     def __init__(self):
         self.client = self.authenticate_client()
 
 
     def authenticate_client(self):
-        ta_credential = AzureKeyCredential("ad0fe521ef2646779cd35c06dd2cfd70")
+        ta_credential = AzureKeyCredential(CONFIG.TEXT_KEY)
         text_analytics_client = TextAnalyticsClient(
-                endpoint="https://textanalysisbottip.cognitiveservices.azure.com/", 
+                endpoint=CONFIG.ENDPOINT_TEXT_ANALYSIS, 
                 credential=ta_credential)
         return text_analytics_client
 
@@ -39,13 +40,6 @@ class TextAnalyzer:
             "negative": n_negative,
             "neutral": n_neutral
         }
-
-        negative_sentences = []
-
-        for res in response:
-            for i, sentence in enumerate(res.sentences):
-                if sentence.sentiment == "negative" and sentence.confidence_scores.negative>=0.9:
-                    negative_sentences.append(sentence.text)
-                    print(sentence)
-        return dic, negative_sentences
+        
+        return dic
             

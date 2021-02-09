@@ -10,17 +10,14 @@ import requests
 from bean import BookInfo
 from databaseManager import DatabaseManager
 from botbuilder.core.card_factory import CardFactory
-from pyadaptivecards.components import TextBlock, Column
-from pyadaptivecards.container import ColumnSet
-from pyadaptivecards.options import Colors, HorizontalAlignment, Spacing, FontWeight
-import os
-from pyadaptivecards.options import FontSize
 from typing import List
 import time
 import json
 import re
 from text_analyzer import TextAnalyzer
+from config import DefaultConfig
 
+CONFIG = DefaultConfig()
 
 class FindBookDialog(CancelAndHelpDialog):
     def __init__(self, dialog_id: str = None):
@@ -52,8 +49,7 @@ class FindBookDialog(CancelAndHelpDialog):
         )
         return await step_context.prompt(
             "TextPromptLibro", PromptOptions(prompt=prompt_message,
-            retry_prompt=MessageFactory.text('''Quale libro vuoi cercare? Il nome del libro deve avere lunghezza
-            compresa tra 5 e 30'''))
+            retry_prompt=MessageFactory.text('''Quale libro vuoi cercare? Il nome del libro deve avere lunghezza compresa tra 3 e 50'''))
         )
     
 
@@ -85,7 +81,7 @@ class FindBookDialog(CancelAndHelpDialog):
         if result:
             if amazonLink is not None:
                 print(amazonLink)
-                results, mean, negative_sentences = FindBookDialog.get_reviews(amazonLink)
+                results, mean = FindBookDialog.get_reviews(amazonLink)
                 if results is not None:
                     max=results["positive"]
                     strMax = "Ti consiglio fortemente l'acquisto."
@@ -107,17 +103,13 @@ class FindBookDialog(CancelAndHelpDialog):
                     message_text = ('''Ho analizzato le recensioni.\nI lettori hanno espresso {} opinioni positive, {} opinioni neutrali e {} opinioni negative.\nLa media del valore delle recensioni è {} stelle.\n'''.format(results["positive"], results["neutral"], results["negative"], mean))
                     message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
                     await step_context.context.send_activity(message)
-                    
-                    """if negative_sentences is not None and len(negative_sentences)>0:
-                        await step_context.context.send_activity(MessageFactory.text("Ecco le principali critiche:"))
-                        for sentence in negative_sentences:
-                            await step_context.context.send_activity(MessageFactory.text(sentence))"""
+        
                     message_text = "\n" +strMax+"\n"
                     message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
                     await step_context.context.send_activity(message)
                     return await step_context.next([])
 
-            message_text = ('''Errore durante l'analisi delle recensioni''')
+            message_text = ('''Non ho trovato alcuna recensione.''')
             message = MessageFactory.text(message_text, message_text, InputHints.ignoring_input)
             await step_context.context.send_activity(message)
         return await step_context.next([])
@@ -219,10 +211,10 @@ class FindBookDialog(CancelAndHelpDialog):
 
 
     def find_book(self, title: str, step_context):
-        r= requests.get("https://bookscraping.azurewebsites.net/api/find-book?name={}&who=all".format(title))      
+        r = requests.get(""+CONFIG.ENDPOINT_FIND_FUNCTION+"?name={}&who=all".format(title))      
         string_result=r.text.split("\n")
         amazonLink = string_result[0]
-        step_context.values["amazonLink"] =amazonLink
+        step_context.values["amazonLink"] = amazonLink
         string_result = string_result[1:]
         book=BookInfo()
         books = []
@@ -269,6 +261,7 @@ class FindBookDialog(CancelAndHelpDialog):
             and isinstance(prompt_context.recognized.value, bool)
         )
     
+    
     @staticmethod
     async def validateSite(prompt_context: PromptValidatorContext) -> bool:
         return (
@@ -280,20 +273,19 @@ class FindBookDialog(CancelAndHelpDialog):
     @staticmethod
     def get_reviews(link: str):
         asin = link[link.rindex('/') + 1:]
+        api_key = CONFIG.KEY_AMAZON_API
         params = {
-            'api_key': 'A2E5C7D9C233454FAE27F2A0911C42A8',
+            'api_key': api_key,
             'type': 'reviews',
             'amazon_domain': 'amazon.it',
             'asin': asin,
             'page': '3'
         }
 
-        # make the http GET request to Rainforest API
         api_result = requests.get('https://api.rainforestapi.com/request', params)
 
         jsonStringResult = json.dumps(api_result.json())
         jsonResult = json.loads(jsonStringResult)
-        print(jsonResult)
         reviews = jsonResult["reviews"]
         list_of_body=[]
         for review in reviews:
@@ -310,11 +302,11 @@ class FindBookDialog(CancelAndHelpDialog):
         
         text_analyzer=TextAnalyzer()
         if len(list_of_body)>0:
-            results, negative_sentences = text_analyzer.sentiment_analysis(list_of_body)
+            results = text_analyzer.sentiment_analysis(list_of_body)
         else:
-            results, negative_sentences = (None, None)
+            results = None
         
-        return (results, mean, negative_sentences)
+        return (results, mean)
 
     
 
