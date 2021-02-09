@@ -74,8 +74,9 @@ Installazione
 
 Clonare la repository Github e installare in un ambiente virtuale i
 pacchetti richiesti con il comando:
-
+```sh
 pip install -r requirements.txt
+```
 
 Risorse
 -------
@@ -88,18 +89,19 @@ Risorse
 
 1.  Aprire il prompt dei comandi per accedere al portale di Azure con il
     comando
-
+```sh
 az login
 
+
 1.  Impostare la sottoscrizione predefinita da usare
-
+```sh
 az account set --subscription "&lt;azure-subscription&gt;"
-
+```
 1.  Creare la registrazione dell’applicazione con il comando
-
+```sh
 az ad app create --display-name "displayName" –password
 "AtLeastSixteenCharacters\_0" --available-to-other-tenants
-
+```
 È necessario registrare i valori** appID** e **secret** dopo
 l’esecuzione del comando precedente.
 
