@@ -91,7 +91,7 @@ Risorse
     comando
 ```sh
 az login
-
+```
 
 1.  Impostare la sottoscrizione predefinita da usare
 ```sh
@@ -99,8 +99,7 @@ az account set --subscription "&lt;azure-subscription&gt;"
 ```
 1.  Creare la registrazione dell’applicazione con il comando
 ```sh
-az ad app create --display-name "displayName" –password
-"AtLeastSixteenCharacters\_0" --available-to-other-tenants
+az ad app create --display-name "displayName" –password "AtLeastSixteenCharacters\_0" --available-to-other-tenants
 ```
 È necessario registrare i valori** appID** e **secret** dopo
 l’esecuzione del comando precedente.
