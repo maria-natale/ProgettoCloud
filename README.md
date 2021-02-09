@@ -27,6 +27,8 @@ Le funzionalità offerte dal bot sono:
     di rimuoverli. Tutti i libri nella wishlist sono costantemente
     monitorati al fine di notificare l’utente di cambiamenti su prezzo
     e/o disponibilità.
+	
+<p align="center"><img src="./images/services.png"/></p>
 
 Il bot è stato sviluppato in Python ed è stato pubblicato sul canale
 Telegram ed utilizza i seguenti servizi:
