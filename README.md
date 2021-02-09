@@ -155,27 +155,21 @@ l’esecuzione del comando precedente.
 
     1.  Assegnare un nome all'applicazione.
     2.  Selezionare le opzioni per **Tipi di account supportati** per
-        l'applicazione. Tutte queste opzioni sono appropriate per
-        questo esempio.
+        l'applicazione. 
     3.  Per **URI di reindirizzamento**
 
         1.  Selezionare **Web**.
         2.  Impostare
             l'URL su https://token.botframework.com/.auth/web/redirect.
 
-    4.  Fare clic su **Register**.
-
-        1.  Dopo la creazione, Azure visualizza la
-            > pagina **Panoramica** per l'app.
-
-        2.  Registrare il valore di **ID applicazione (client)**. Questo
-            > valore verrà usato in un secondo momento come *ID
-            > client* quando si crea la stringa di connessione e si
-            > registra il provider di Azure ad con la registrazione bot.
-
-        3.  Registrare anche il valore di **ID della directory
-            > (tenant)**. Questa operazione verrà usata anche per
-            > registrare l'applicazione del provider con il bot.
+    4.  Fare clic su **Register**. Dopo la creazione, Azure visualizza
+        la pagina **Panoramica** per l'app. Registrare il valore di **ID
+        applicazione (client)**. Questo valore verrà usato in un secondo
+        momento come *ID client* quando si crea la stringa di
+        connessione e si registra il provider di Azure ad con la
+        registrazione bot. Registrare anche il valore di **ID della
+        directory (tenant)**. Questa operazione verrà usata anche per
+        registrare l'applicazione del provider con il bot.
 
 5.  Nel riquadro di spostamento fare clic su **Certificati e
     segreti** per creare un segreto per l'applicazione.
