@@ -1,5 +1,6 @@
 BotTipBooks
 ===========
+**Contributors**: Maria Natale, Gabriele Pisapia
 
 **BotTipBooks** è un bot intelligente per Telegram in grado di fornire
 supporto agli utenti che interagiscono con esso, al fine di consigliare
@@ -241,7 +242,7 @@ Aggiornare nel codice del bot il file config.py.
 
 -   Impostare **ConnectionName** sul nome dell’impostazione di
     connessione OAuth aggiunto al bot.
--   Impostare **MicrosoftAppId **e **MicrosoftAppPassword** sull’ID app
+-   Impostare **MicrosoftAppId** e **MicrosoftAppPassword** sull’ID app
     e il segreto del bot.
 
 ### Azure SQL
